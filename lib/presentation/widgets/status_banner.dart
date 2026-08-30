@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../core/formatting.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../controllers/converter_controller.dart';
 
-/// Thin strip above the results that communicates data freshness:
-/// - offline fallback  -> amber, "you're offline, rates from X ago" (F6.AC1)
-/// - API-unavailable fallback -> amber, names a server problem (F6.AC3)
-/// - fresh -> a quiet "updated X ago" line, plus a spinner while refreshing
+/// Communicates data freshness above the results:
+/// - offline / API-down fallback -> a dismissible warning card (F6.AC1/AC3)
+/// - fresh -> a quiet "updated x ago" pill, with a spinner while refreshing
 ///
-/// The amber variants are dismissible (F6.AC1); dismissal resets whenever the
-/// underlying reason changes.
+/// A dismissed warning re-appears if the underlying reason changes.
 class StatusBanner extends StatefulWidget {
   const StatusBanner({
     super.key,
@@ -18,24 +18,20 @@ class StatusBanner extends StatefulWidget {
   });
 
   final ConverterState state;
-  final VoidCallback onRefresh;
+  final Future<void> Function() onRefresh;
 
   @override
   State<StatusBanner> createState() => _StatusBannerState();
 }
 
 class _StatusBannerState extends State<StatusBanner> {
-  bool _dismissed = false;
+  String? _dismissedReason;
 
-  /// A key describing "why is a banner showing" so we can re-show it after a
-  /// dismiss once the situation changes.
-  String get _reasonKey {
-    final ConverterState s = widget.state;
-    if (s.isOffline) return 'offline';
-    if (s.isStale) return 'stale';
+  String get _reason {
+    if (widget.state.isOffline) return 'offline';
+    if (widget.state.isStale) return 'stale';
     return 'fresh';
   }
-  String _dismissedReason = '';
 
   @override
   Widget build(BuildContext context) {
@@ -45,77 +41,145 @@ class _StatusBannerState extends State<StatusBanner> {
     final String updatedAgo = state.fetchedAt == null
         ? 'the last update'
         : formatRelativeTime(state.fetchedAt!);
+    final bool warning = state.isOffline || state.isStale;
 
-    final bool showWarning = state.isOffline || state.isStale;
-    if (showWarning && !(_dismissed && _dismissedReason == _reasonKey)) {
-      return _WarningBanner(
-        icon: state.isOffline ? Icons.cloud_off : Icons.warning_amber_rounded,
-        message: state.isOffline
-            ? "You're offline — showing rates from $updatedAgo."
-            : 'Rates service is unavailable — showing rates from $updatedAgo.',
-        onRefresh: widget.onRefresh,
-        onDismiss: () => setState(() {
-          _dismissed = true;
-          _dismissedReason = _reasonKey;
-        }),
+    if (warning && _dismissedReason != _reason) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          0,
+        ),
+        child: _WarningCard(
+          offline: state.isOffline,
+          message: state.isOffline
+              ? "You're offline — showing rates from $updatedAgo."
+              : 'Rates service is unavailable — showing rates from $updatedAgo.',
+          onRefresh: widget.onRefresh,
+          onDismiss: () => setState(() => _dismissedReason = _reason),
+        ),
       );
     }
 
-    // Fresh (or a dismissed warning): quiet status line.
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: <Widget>[
-          Icon(Icons.check_circle_outline,
-              size: 16, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 6),
-          Text('Rates updated $updatedAgo',
-              style: Theme.of(context).textTheme.bodySmall),
-          const Spacer(),
-          if (state.isRefreshing)
-            const SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(strokeWidth: 2),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        0,
+      ),
+      child: _FreshPill(updatedAgo: updatedAgo, refreshing: state.isRefreshing),
+    );
+  }
+}
+
+class _FreshPill extends StatelessWidget {
+  const _FreshPill({required this.updatedAgo, required this.refreshing});
+
+  final String updatedAgo;
+  final bool refreshing;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppColors colors = context.appColors;
+    final ThemeData theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: colors.successContainer,
+          borderRadius: AppRadius.allPill,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (refreshing)
+              SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: colors.onSuccessContainer,
+                ),
+              )
+            else
+              Icon(Icons.check_circle_rounded,
+                  size: 14, color: colors.onSuccessContainer),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              refreshing ? 'Updating rates…' : 'Rates updated $updatedAgo',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colors.onSuccessContainer,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class _WarningBanner extends StatelessWidget {
-  const _WarningBanner({
-    required this.icon,
+class _WarningCard extends StatelessWidget {
+  const _WarningCard({
+    required this.offline,
     required this.message,
     required this.onRefresh,
     required this.onDismiss,
   });
 
-  final IconData icon;
+  final bool offline;
   final String message;
-  final VoidCallback onRefresh;
+  final Future<void> Function() onRefresh;
   final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
-    final Color bg = Theme.of(context).colorScheme.tertiaryContainer;
-    final Color fg = Theme.of(context).colorScheme.onTertiaryContainer;
+    final AppColors colors = context.appColors;
+    final ThemeData theme = Theme.of(context);
+    final Color bg = colors.warningContainer;
+    final Color fg = colors.onWarningContainer;
+
     return Container(
-      width: double.infinity,
-      color: bg,
-      padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+      ),
+      decoration: BoxDecoration(color: bg, borderRadius: AppRadius.allLg),
       child: Row(
         children: <Widget>[
-          Icon(icon, size: 18, color: fg),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(message, style: TextStyle(color: fg, fontSize: 13)),
+          Icon(
+            offline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
+            size: 20,
+            color: fg,
           ),
-          TextButton(onPressed: onRefresh, child: const Text('Refresh')),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              message,
+              style: theme.textTheme.bodySmall?.copyWith(color: fg),
+            ),
+          ),
+          TextButton(
+            onPressed: onRefresh,
+            style: TextButton.styleFrom(
+              foregroundColor: fg,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              minimumSize: const Size(0, 36),
+            ),
+            child: const Text('Retry'),
+          ),
           IconButton(
             onPressed: onDismiss,
-            icon: Icon(Icons.close, size: 18, color: fg),
+            visualDensity: VisualDensity.compact,
+            icon: Icon(Icons.close_rounded, size: 18, color: fg),
             tooltip: 'Dismiss',
           ),
         ],

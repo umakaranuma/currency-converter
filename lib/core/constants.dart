@@ -23,6 +23,18 @@ const Map<String, int> kCurrencyDecimals = <String, int>{
   'CAD': 2,
 };
 
+/// Human-facing metadata (full name + flag emoji) for the base and every target
+/// currency. Purely presentational — the conversion logic only needs the codes.
+const Map<String, ({String name, String flag})> kCurrencyInfo =
+    <String, ({String name, String flag})>{
+  'USD': (name: 'US Dollar', flag: '\u{1F1FA}\u{1F1F8}'),
+  'EUR': (name: 'Euro', flag: '\u{1F1EA}\u{1F1FA}'),
+  'GBP': (name: 'British Pound', flag: '\u{1F1EC}\u{1F1E7}'),
+  'JPY': (name: 'Japanese Yen', flag: '\u{1F1EF}\u{1F1F5}'),
+  'AUD': (name: 'Australian Dollar', flag: '\u{1F1E6}\u{1F1FA}'),
+  'CAD': (name: 'Canadian Dollar', flag: '\u{1F1E8}\u{1F1E6}'),
+};
+
 /// How long a cached rate snapshot is considered "fresh". Within this window the
 /// repository serves the cache and makes **no** network call. Rationale for the
 /// 1-hour value is in `agent/decisions.md` D1.

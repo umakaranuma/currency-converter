@@ -33,9 +33,10 @@ Three layers, dependencies point inward (`presentation → domain → data`):
 lib/
 ├── main.dart                     composition root: builds the object graph
 ├── core/
-│   ├── constants.dart            currency set, TTL, timeout, base URL, cache key
+│   ├── constants.dart            currency set + display metadata, TTL, timeout, URL, cache key
 │   ├── errors.dart               sealed AppException hierarchy
-│   └── formatting.dart           money / rate / "x ago" string helpers
+│   ├── formatting.dart           money / rate / "x ago" string helpers
+│   └── theme/                    design system: spacing, colour tokens, light+dark ThemeData
 ├── data/                         everything I/O
 │   ├── datasources/
 │   │   ├── rates_remote_datasource.dart   HTTP + JSON, maps failures to exceptions
@@ -179,6 +180,30 @@ throw; the controller maps the outcome to a view state; the page renders it.
 - **`fetchedAt = our fetch time`, not the provider's publish time** — the TTL is
   about "how long since *we* asked", and the free endpoint only publishes daily,
   which would otherwise make every snapshot look stale.
+
+## Design system
+
+`lib/core/theme/` is a small token-based design system, documented in
+[`agent/design-system.md`](agent/design-system.md):
+
+- **`app_spacing.dart`** — one 4-point spacing scale and one radius scale;
+  widgets use these, not raw numbers.
+- **`app_colors.dart`** — an `AppColors` `ThemeExtension` for the semantic
+  colours Material's `ColorScheme` doesn't model (success / warning / info
+  triads, the header gradient, skeleton shimmer), defined for light **and**
+  dark. Accessor: `context.appColors`.
+- **`app_theme.dart`** — `AppTheme.light` / `AppTheme.dark`: a hand-built
+  `ColorScheme` each (indigo primary, emerald accent), component themes
+  (cards, inputs, buttons, banner), and one tuned type scale with tabular
+  figures for the numbers.
+
+`main.dart` sets `themeMode: ThemeMode.system`, so it follows the OS. No fonts,
+image assets, or extra packages were added — it's pure Material 3, and every
+colour/size comes from `Theme.of(context)`.
+
+The UI itself: a gradient header, a floating amount card, flag-badged result
+cards (tap to copy), a freshness pill / offline banner, skeleton rows on first
+load, and a typed-per-error full-screen error state.
 
 ## Known cuts / what's next
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/theme/app_theme.dart';
 import 'data/datasources/rates_local_datasource.dart';
 import 'data/datasources/rates_remote_datasource.dart';
 import 'data/repositories/rates_repository_impl.dart';
@@ -40,10 +41,9 @@ class CurrencyConverterApp extends StatelessWidget {
     return MaterialApp(
       title: 'USD Currency Converter',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       home: ConverterPage(controller: controller),
     );
   }
