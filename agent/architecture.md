@@ -36,21 +36,22 @@ lib/
 ├── data/
 │   ├── datasources/
 │   │   ├── rates_remote_datasource.dart   ← abstract + http implementation
-│   │   ├── rates_local_datasource.dart    ← abstract + shared_preferences implementation
-│   │   └── settings_store.dart            ← plain-string SharedPreferences for theme mode
+│   │   └── rates_local_datasource.dart    ← abstract + shared_preferences implementation
 │   ├── models/
 │   │   └── rates_dto.dart         ← parses API JSON, toEntity(), toJson()/fromJson() for cache
 │   └── repositories/
-│       ├── rates_repository_impl.dart              ← implements domain RatesRepository
-│       └── currency_preferences_repository_impl.dart ← implements CurrencyPreferencesRepository
+│       ├── rates_repository_impl.dart                ← implements domain RatesRepository
+│       ├── currency_preferences_repository_impl.dart ← implements CurrencyPreferencesRepository
+│       └── settings_repository_impl.dart             ← implements SettingsRepository (theme mode)
 │
 ├── domain/
 │   ├── entities/
 │   │   ├── exchange_rates.dart    ← { base, Map<String,double> rates, DateTime fetchedAt } + isStale(ttl)
 │   │   └── currency_preferences.dart ← ordered selected codes + add/remove/reorder/sanitize
 │   ├── repositories/
-│   │   ├── rates_repository.dart            ← abstract: getRates({bool forceRefresh})
-│   │   └── currency_preferences_repository.dart ← abstract: load() / save(prefs)
+│   │   ├── rates_repository.dart                ← abstract: getRates({bool forceRefresh})
+│   │   ├── currency_preferences_repository.dart ← abstract: load() / save(prefs)
+│   │   └── settings_repository.dart             ← abstract: read/writeThemeMode (string, Flutter-free)
 │   └── services/
 │       └── conversion_service.dart ← pure: convert(amount, rates) → Map<String,double>
 │

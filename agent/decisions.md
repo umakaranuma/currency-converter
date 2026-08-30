@@ -108,13 +108,17 @@ line. The agent **MUST** follow all of these and **MUST NOT** re-open them
 - **Missing-code policy:** a missing *default-selection* code = broken feed →
   `ApiException`. A missing exotic code is tolerated (that row just has no rate).
 
-## D10 — Theme mode: manual toggle over its own tiny store
+## D10 — Theme mode: manual toggle behind a `SettingsRepository` interface
 
-- **What:** `ThemeController` (ChangeNotifier) + `SettingsStore` (plain strings,
-  no Flutter import in the data layer). `MaterialApp` reads `themeMode`.
+- **What:** `ThemeController` (ChangeNotifier) depends on a `SettingsRepository`
+  interface (domain), implemented by `SharedPrefsSettingsRepository` (data).
+  `MaterialApp` reads `themeMode`.
+- **Why an interface, not a concrete store:** so *every* controller depends only
+  on domain interfaces — `presentation/` never imports `data/` (verified by
+  grep). The interface is string-typed (`'system'`/`'light'`/`'dark'`) to stay
+  Flutter-free; `ThemeController` maps string ↔ `ThemeMode`.
 - **Why separate from currency prefs and rate cache:** unrelated concern,
-  unrelated lifetime, unrelated schema. One key, three states
-  (`system`/`light`/`dark`), cycled by one button.
+  lifetime and schema. One key, three states, cycled by one header button.
 - **Why not a full settings screen:** one toggle is the whole surface; a screen
   would be ceremony (rules.md R1.4).
 

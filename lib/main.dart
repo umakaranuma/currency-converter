@@ -5,11 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'data/datasources/rates_local_datasource.dart';
 import 'data/datasources/rates_remote_datasource.dart';
-import 'data/datasources/settings_store.dart';
 import 'data/repositories/currency_preferences_repository_impl.dart';
 import 'data/repositories/rates_repository_impl.dart';
+import 'data/repositories/settings_repository_impl.dart';
 import 'domain/repositories/currency_preferences_repository.dart';
 import 'domain/repositories/rates_repository.dart';
+import 'domain/repositories/settings_repository.dart';
 import 'domain/services/conversion_service.dart';
 import 'presentation/controllers/converter_controller.dart';
 import 'presentation/controllers/theme_controller.dart';
@@ -28,6 +29,7 @@ Future<void> main() async {
   );
   final CurrencyPreferencesRepository currencyPreferences =
       CurrencyPreferencesRepositoryImpl(prefs);
+  final SettingsRepository settings = SharedPrefsSettingsRepository(prefs);
 
   final ConverterController controller = ConverterController(
     ratesRepository,
@@ -35,7 +37,7 @@ Future<void> main() async {
     conversionService: const ConversionService(),
   );
   final ThemeController themeController =
-      ThemeController.fromStore(SettingsStore(prefs));
+      ThemeController.fromRepository(settings);
 
   runApp(CurrencyConverterApp(
     controller: controller,

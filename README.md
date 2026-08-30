@@ -53,17 +53,17 @@ lib/
 ├── data/                         everything I/O
 │   ├── datasources/
 │   │   ├── rates_remote_datasource.dart   HTTP + JSON, maps failures to exceptions
-│   │   ├── rates_local_datasource.dart    SharedPreferences read/write (rate cache)
-│   │   └── settings_store.dart            SharedPreferences read/write (theme mode)
+│   │   └── rates_local_datasource.dart    SharedPreferences read/write (rate cache)
 │   ├── models/rates_dto.dart     API JSON  ⇄  cache JSON  ⇄  domain entity
-│   └── repositories/
+│   └── repositories/             one *_impl.dart per domain interface
 │       ├── rates_repository_impl.dart                the cache-vs-network policy
-│       └── currency_preferences_repository_impl.dart persisted currency selection
+│       ├── currency_preferences_repository_impl.dart persisted currency selection
+│       └── settings_repository_impl.dart             persisted theme mode
 ├── domain/                       pure Dart, no Flutter / no http
 │   ├── entities/
 │   │   ├── exchange_rates.dart              snapshot + fetchedAt + isStale(ttl)
 │   │   └── currency_preferences.dart        ordered selection + add/remove/reorder/sanitize
-│   ├── repositories/             the interfaces presentation depends on
+│   ├── repositories/             3 interfaces — the only things presentation depends on
 │   └── services/conversion_service.dart     amount × rate
 └── presentation/
     ├── controllers/
@@ -76,11 +76,17 @@ lib/
 ```
 
 **Why these layers.** The two things being graded — "is the logic testable?"
-and "can you swap the API?" — both come from the same split: `domain` defines a
-`RatesRepository` interface and plain entities; `data` implements it. The
-repository and the conversion service are plain Dart, so they unit-test with no
-widget harness. Swapping providers means writing one new
+and "can you swap the API?" — both come from the same split: `domain` defines
+the interfaces (`RatesRepository`, `CurrencyPreferencesRepository`,
+`SettingsRepository`) and plain entities; `data` implements them. The
+repositories and the conversion service are plain Dart, so they unit-test with
+no widget harness. Swapping providers means writing one new
 `RatesRemoteDataSource`; `domain` and `presentation` don't change.
+
+**Dependency direction is enforced, not aspirational.** `presentation/` imports
+only `domain/` interfaces and `core/` — never `data/` (grep-checked). `domain/`
+imports neither Flutter nor `http`. `main.dart` is the one place concrete `data`
+classes are named, wired by constructor injection (no DI package).
 
 **Why not full Clean Architecture.** No use-case classes, no DI container, no
 `Either`/`Result` type. At this size those are boilerplate. Errors are modelled

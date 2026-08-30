@@ -1,26 +1,28 @@
 import 'package:flutter/material.dart';
 
-import '../../data/datasources/settings_store.dart';
+import '../../domain/repositories/settings_repository.dart';
 
 /// Holds the chosen [ThemeMode] and persists changes. Built-in [ChangeNotifier]
-/// only — `MaterialApp` rebuilds through a `ListenableBuilder` on this.
+/// only — `MaterialApp` rebuilds through a `ListenableBuilder` on this. Depends
+/// on the [SettingsRepository] interface, like the other controllers depend on
+/// their repositories.
 class ThemeController extends ChangeNotifier {
-  ThemeController(this._store, this._mode);
+  ThemeController(this._settings, this._mode);
 
-  final SettingsStore _store;
+  final SettingsRepository _settings;
   ThemeMode _mode;
 
   ThemeMode get mode => _mode;
 
   /// Reads the persisted choice once at startup.
-  static ThemeController fromStore(SettingsStore store) =>
-      ThemeController(store, _parse(store.readThemeMode()));
+  static ThemeController fromRepository(SettingsRepository settings) =>
+      ThemeController(settings, _parse(settings.readThemeMode()));
 
   Future<void> setMode(ThemeMode mode) async {
     if (mode == _mode) return;
     _mode = mode;
     notifyListeners();
-    await _store.writeThemeMode(mode.name);
+    await _settings.writeThemeMode(mode.name);
   }
 
   /// Cycles system -> light -> dark -> system, for a single-tap toggle button.
