@@ -36,6 +36,36 @@ key-less `open.er-api.com` endpoint.
 - **Theme toggle** in the header: system → light → dark, persisted.
 - 1-hour rate cache, stale-with-banner offline behaviour, typed errors.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="screenshots/light_theme.jpeg" width="240" alt="Home screen, light theme"><br>
+      <sub><b>Home — light.</b> $10 converted; tap a row to copy.</sub>
+    </td>
+    <td align="center">
+      <img src="screenshots/dark_theme.jpeg" width="240" alt="Home screen, dark theme"><br>
+      <sub><b>Home — dark.</b> Same tokens, dark ground.</sub>
+    </td>
+    <td align="center">
+      <img src="screenshots/new_feature.jpeg" width="240" alt="Manage currencies screen"><br>
+      <sub><b>Manage currencies.</b> Search, toggle, reset; USD pinned as base.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="screenshots/internet_connection.jpeg" width="240" alt="Offline banner with no amount entered"><br>
+      <sub><b>Offline.</b> Amber banner names the reason and offers Retry.</sub>
+    </td>
+    <td align="center">
+      <img src="screenshots/cache_function.jpeg" width="240" alt="Offline but cached rates still convert"><br>
+      <sub><b>Offline + cache.</b> Cached rates still power the conversion.</sub>
+    </td>
+    <td></td>
+  </tr>
+</table>
+
 ---
 
 ## 1. Walk me through the architecture
