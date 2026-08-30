@@ -43,8 +43,8 @@ types when picking a UI state.
 | remote datasource | status != 200 | `ApiException(statusCode: ...)` |
 | remote datasource | body not JSON / `result != "success"` / target rate missing | `ApiException('Unexpected response from rates service')` |
 | local datasource | key absent | returns `null` (not an exception) |
-| local datasource | stored JSON fails to parse | returns `null`, logs once |
-| repository | fetch failed **and** no cache | rethrows `NetworkException` / `ApiException`, or `CacheMissException` if cache was corrupt |
+| local datasource | stored JSON fails to parse | logs once, deletes the bad entry, throws `CacheMissException` |
+| repository | fetch failed **and** no cache | rethrows `NetworkException` / `ApiException`; or `CacheMissException` if the stored cache was corrupt |
 
 The repository **catches** `NetworkException` / `ApiException` when a cache
 exists and returns stale data instead of throwing (see

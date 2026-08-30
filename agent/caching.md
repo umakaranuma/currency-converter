@@ -71,8 +71,9 @@ Key points:
   fallback, but a refresh is attempted first).
 - **Schema:** `kCachePrefsKey` version suffix changes → old key is simply never
   read again.
-- **Corrupt data:** if `local.read()` fails to parse, treat as no cache (return
-  null, log once) — do not crash.
+- **Corrupt data:** if `local.read()` fails to parse, log once, delete the bad
+  entry, and throw `CacheMissException`. The repository treats that as "no
+  cache" and only surfaces it to the UI if the subsequent fetch also fails.
 - There is **no** manual "clear cache" feature (out of scope).
 
 ## Offline policy (explicit)

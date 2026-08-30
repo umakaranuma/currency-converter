@@ -28,7 +28,8 @@ lib/
 │
 ├── core/
 │   ├── constants.dart            ← base currency, target list, TTL, base URL, timeout
-│   └── errors.dart               ← exception hierarchy (see error-handling.md)
+│   ├── errors.dart               ← exception hierarchy (see error-handling.md)
+│   └── formatting.dart           ← money / rate / relative-time string helpers (pure Dart)
 │
 ├── data/
 │   ├── datasources/
