@@ -64,6 +64,11 @@ Key points:
 | Typing in amount field | Recompute locally from held rates — never touches cache or network |
 | Manual refresh (F7) | `forceRefresh: true` → always fetch; on failure fall back to stale/error as above |
 | Fetch succeeds | Overwrite cache entirely (no merge) |
+| Add / remove / reorder a currency (F10–F12) | Recompute + repaint from held rates — **no cache read, no network** |
+
+The snapshot holds rates for the whole `kSupportedCurrencies` catalogue (~30),
+not just the selected ones (decisions.md D9), which is why changing the
+selection never needs I/O.
 
 ## When the cache is invalidated
 
@@ -71,9 +76,21 @@ Key points:
   fallback, but a refresh is attempted first).
 - **Schema:** `kCachePrefsKey` version suffix changes → old key is simply never
   read again.
-- **Corrupt data:** if `local.read()` fails to parse, treat as no cache (return
-  null, log once) — do not crash.
+- **Corrupt data:** if `local.read()` fails to parse, log once, delete the bad
+  entry, and throw `CacheMissException`. The repository treats that as "no
+  cache" and only surfaces it to the UI if the subsequent fetch also fails.
 - There is **no** manual "clear cache" feature (out of scope).
+
+### Other persisted state (kept in separate slots)
+
+| Data | Key | Notes |
+|---|---|---|
+| Rate snapshot | `kCachePrefsKey` (`cached_exchange_rates_v1`) | this document |
+| Currency selection + order | `kCurrencyPrefsKey` (`currency_selection_v1`) | JSON string array; sanitized on load; corrupt → defaults |
+| Theme mode | `kThemePrefsKey` (`theme_mode_v1`) | one of `system` / `light` / `dark` |
+
+Each has its own `_v1` schema version. None of them ever reads or writes
+another's key — a change to one cannot corrupt or invalidate another.
 
 ## Offline policy (explicit)
 

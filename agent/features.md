@@ -99,6 +99,65 @@ Driven by the typed errors in [`error-handling.md`](error-handling.md).
   straight to showing cached data with the offline banner — do not show the
   error screen.
 
+---
+
+# Extensions beyond the assignment brief
+
+The assignment does not ask for these. They were added deliberately (user
+request) to turn the "would it be hard to add 50 currencies / a theme?"
+architecture question into working proof. Rule: **all logic for these lives in a
+repository or the controller, never in a widget** — same bar as everything
+above. Priorities are relative to each other; none of them outranks a P0 above,
+the one test, or the README.
+
+## F10 — Choose which currencies to show (P1)
+
+- AC1 A **currency picker** screen, reachable from a "Manage currencies" action
+  on the results list.
+- AC2 It lists the full catalogue ([`tech-stack.md`](tech-stack.md)
+  `kSupportedCurrencies`), each with flag, code, name, and an on/off switch.
+- AC3 The base currency (USD) is shown pinned at the top, labelled "Base", and
+  cannot be toggled off.
+- AC4 Toggling a currency updates the results list immediately and **persists**
+  (survives restart) via a `CurrencyPreferencesRepository` — a **separate**
+  SharedPreferences key from the rate cache (`kCurrencyPrefsKey`).
+- AC5 The selection can never become empty — the last remaining currency's
+  toggle is disabled with a hint.
+- AC6 Changing the selection **never triggers a network call**: rates for the
+  whole catalogue are already fetched and cached (see
+  [`caching.md`](caching.md)).
+- AC7 A "Reset" action restores `kDefaultSelection`.
+
+## F11 — Search / filter the catalogue (P1)
+
+- AC1 On the picker screen, a search field filters the catalogue by code or
+  name, case-insensitive, as the user types.
+- AC2 A clear (×) button in the field resets the filter; it appears only when
+  the field is non-empty.
+- AC3 An empty result set shows a plain "No currency matches …" message.
+
+## F12 — Reorder the currency list (P1)
+
+- AC1 The results list is drag-to-reorder (`ReorderableListView`), with a drag
+  handle on each row.
+- AC2 The new order updates immediately and persists through the same
+  `CurrencyPreferencesRepository`.
+- AC3 Reordering never triggers a network call.
+
+## F13 — Light / dark theme toggle (P1)
+
+- AC1 A single control in the header cycles **follow system → light → dark →
+  follow system**; the icon reflects the current mode.
+- AC2 The choice **persists** across restarts, stored via a small `SettingsStore`
+  under its own key (`kThemePrefsKey`), independent of everything else.
+- AC3 `MaterialApp` uses `theme` / `darkTheme` / `themeMode`; both themes are
+  already defined in [`design-system.md`](design-system.md).
+
+## F14 — Clear the amount (P2)
+
+- AC1 A clear (×) button inside the amount field, visible only when it has
+  text; tapping it empties the field and resets all results to 0.
+
 ## Non-functional expectations
 
 - The app builds and runs on Android with `flutter run`.

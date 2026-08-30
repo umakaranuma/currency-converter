@@ -72,7 +72,58 @@ line. The agent **MUST** follow all of these and **MUST NOT** re-open them
 
 ## D7 — No per-keystroke work beyond local math
 
-- Conversion is `amount * rate` over 5 held values — synchronous, instant. The
+- Conversion is `amount * rate` over the held rates — synchronous, instant. The
   controller keeps the rates in memory after the first load, so typing never
   calls the repository, cache, or network. An optional ~300 ms debounce on
   recompute is allowed but unnecessary.
+
+---
+
+# Decisions for the extension features (F10–F14)
+
+## D8 — Currency selection is persisted state behind its own repository; base stays USD
+
+- **What:** the shown currencies are a user-editable, ordered, persisted list
+  (`CurrencyPreferences` entity + `CurrencyPreferencesRepository`), stored under
+  a **separate** SharedPreferences key from the rate cache.
+- **Why a repository, not just a value in the controller:** it keeps the
+  add/remove/reorder/sanitize logic unit-testable with no widgets, and matches
+  the existing `RatesRepository` shape so a new engineer sees one pattern.
+- **Why base currency stays USD:** the brief says "user enters a USD amount".
+  Making the base editable means per-base cache keys and a bigger caching story
+  for little user value here — explicitly out of scope (kept as a README
+  "what I'd do next" note instead).
+- **Why a separate storage key:** changing the selection must never risk
+  touching cached rates, and vice versa. Independent slots, independent schema
+  versions.
+
+## D9 — Fetch and cache the whole catalogue, not just the selected currencies
+
+- **What:** `RatesDto.fromApiJson` keeps every `kSupportedCurrencies` code the
+  feed provides (~30), and the cache stores all of them.
+- **Why:** the payload already contains ~160 currencies, so keeping 30 instead
+  of 5 costs nothing meaningful, and it means **adding a currency to the list
+  never needs a network call** — the rate is already in memory (F10.AC6). This
+  is the cleanest answer to the brief's "would it be hard to add 50 currencies?"
+- **Missing-code policy:** a missing *default-selection* code = broken feed →
+  `ApiException`. A missing exotic code is tolerated (that row just has no rate).
+
+## D10 — Theme mode: manual toggle behind a `SettingsRepository` interface
+
+- **What:** `ThemeController` (ChangeNotifier) depends on a `SettingsRepository`
+  interface (domain), implemented by `SharedPrefsSettingsRepository` (data).
+  `MaterialApp` reads `themeMode`.
+- **Why an interface, not a concrete store:** so *every* controller depends only
+  on domain interfaces — `presentation/` never imports `data/` (verified by
+  grep). The interface is string-typed (`'system'`/`'light'`/`'dark'`) to stay
+  Flutter-free; `ThemeController` maps string ↔ `ThemeMode`.
+- **Why separate from currency prefs and rate cache:** unrelated concern,
+  lifetime and schema. One key, three states, cycled by one header button.
+- **Why not a full settings screen:** one toggle is the whole surface; a screen
+  would be ceremony (rules.md R1.4).
+
+## D11 — `onReorderItem`, not the deprecated `onReorder`
+
+- Flutter 3.44 deprecates `ReorderableListView.onReorder`. `CurrencyPreferences
+  .reordered(old, new)` uses post-removal index semantics so the framework
+  indices pass straight through with no `+1/-1` fixups.

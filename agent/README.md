@@ -27,6 +27,8 @@ open, this pack **makes the decision** and records the rationale in
 | 8 | [`error-handling.md`](error-handling.md) | Exception hierarchy, network vs API vs cache errors |
 | 9 | [`testing.md`](testing.md) | What to test, what not to test, and why |
 | 10 | [`deliverables.md`](deliverables.md) | README content, submission checklist, definition of done |
+| 11 | [`design-system.md`](design-system.md) | Theme tokens, colour roles, type scale, component styling |
+| 11a | [`design-system.html`](design-system.html) | **Rendered** visual spec — open in a browser; the UI must match it |
 
 ## How the agent should work
 

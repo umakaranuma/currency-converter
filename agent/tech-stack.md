@@ -74,10 +74,32 @@ entirely.
 ## Constants (`lib/core/constants.dart`)
 
 ```dart
-const String kBaseCurrency = 'USD';
-const List<String> kTargetCurrencies = ['EUR', 'GBP', 'JPY', 'AUD', 'CAD'];
+const String kBaseCurrency = 'USD';                 // fixed by scope (decisions.md D8)
+
+// Full catalogue the user can pick from (~30 codes). Fetched + cached in full
+// (decisions.md D9) so changing the selection needs no network.
+const List<String> kSupportedCurrencies = [ /* EUR, GBP, JPY, AUD, CAD, CHF, ... */ ];
+// What a fresh install shows, and what "Reset" restores.
+const List<String> kDefaultSelection = ['EUR', 'GBP', 'JPY', 'AUD', 'CAD'];
+// Currencies shown with 0 decimals; everything else 2.
+const Set<String> kZeroDecimalCurrencies = {'JPY', 'KRW'};
+// code -> (name, flag emoji) for every supported code + USD. Presentational only.
+const Map<String, ({String name, String flag})> kCurrencyInfo = { /* ... */ };
+
 const Duration kCacheTtl = Duration(hours: 1);      // see caching.md / decisions.md
 const Duration kRequestTimeout = Duration(seconds: 10);
 const String kRatesBaseUrl = 'https://open.er-api.com/v6/latest';
-const String kCachePrefsKey = 'cached_exchange_rates_v1';
+
+const String kCachePrefsKey    = 'cached_exchange_rates_v1'; // rate snapshot
+const String kCurrencyPrefsKey = 'currency_selection_v1';    // picked + ordered list
+const String kThemePrefsKey    = 'theme_mode_v1';            // system / light / dark
 ```
+
+Adding a currency to the catalogue = one entry in `kSupportedCurrencies` **and**
+one in `kCurrencyInfo`. Nothing else changes.
+
+## Packages — extension features add none
+
+The currency picker, reorder, theme toggle and clear button use only
+`ReorderableListView`, `ValueListenableBuilder`, `ChangeNotifier` and the
+`shared_preferences` already in the project. No new dependency.
