@@ -1,0 +1,895 @@
+<title>Currency Converter UI Kit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ============================================================
+     TOKENS — page chrome. Cool indigo-biased neutrals.
+     Light lives on :root; dark is redefined token-only so the
+     un-stamped (system) state and both explicit toggles resolve.
+     ============================================================ */
+  :root {
+    --bg:        #F4F5FA;
+    --surface:   #FFFFFF;
+    --surface-2: #FAFBFE;
+    --ink:       #1A1D29;
+    --muted:     #616A7D;
+    --hair:      #E5E8F1;
+    --accent:    #4F6CF7;
+    --accent-ink:#3348C8;
+    --accent-soft:#EEF1FF;
+    --violet:    #7C5CFC;
+    --shadow:    18, 22, 45;
+
+    --maxw: 1140px;
+    --step: clamp(56px, 8vw, 88px);
+    --font-display: 'Bricolage Grotesque', 'Hanken Grotesk', system-ui, sans-serif;
+    --font-body: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #0C0F14;
+      --surface:   #14181F;
+      --surface-2: #171C24;
+      --ink:       #E7EAF1;
+      --muted:     #98A1B0;
+      --hair:      #242A34;
+      --accent:    #9DB0FF;
+      --accent-ink:#B9C4FF;
+      --accent-soft:#1B2350;
+      --violet:    #C3B0FF;
+      --shadow:    2, 4, 12;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:        #0C0F14;
+    --surface:   #14181F;
+    --surface-2: #171C24;
+    --ink:       #E7EAF1;
+    --muted:     #98A1B0;
+    --hair:      #242A34;
+    --accent:    #9DB0FF;
+    --accent-ink:#B9C4FF;
+    --accent-soft:#1B2350;
+    --violet:    #C3B0FF;
+    --shadow:    2, 4, 12;
+  }
+
+  /* ============================================================
+     DEVICE PALETTES — the phone mockups are "products on display",
+     so each commits to its own look regardless of page theme.
+     Mirrors lib/core/theme/ in the Flutter app.
+     ============================================================ */
+  .frame--light .screen {
+    --s-ground:#F7F8FC; --s-surface:#FFFFFF; --s-surface-2:#EAEEF6;
+    --s-ink:#1B1F2A; --s-muted:#5B6478; --s-hair:#E7EBF3;
+    --s-primary:#4F6CF7; --s-primary-ct:#E4E9FF; --s-on-primary-ct:#14235C;
+    --s-accent:#0FB981;
+    --s-grad-a:#4F6CF7; --s-grad-b:#7C5CFC; --s-on-grad:#FFFFFF;
+    --s-success-ct:#DCF3E4; --s-on-success-ct:#0A3D22;
+    --s-warn-ct:#FDF0DA; --s-on-warn-ct:#5A3B0B;
+    --s-error-ct:#FCE9E9; --s-on-error-ct:#5B1212;
+    --s-skel-a:#E8ECF4; --s-skel-b:#F5F7FB;
+    --s-shadow: 20, 26, 60;
+  }
+  .frame--dark .screen {
+    --s-ground:#0E1117; --s-surface:#161A22; --s-surface-2:#1E232D;
+    --s-ink:#E6E9F0; --s-muted:#9AA3B2; --s-hair:#262C38;
+    --s-primary:#9DB0FF; --s-primary-ct:#2A3A8F; --s-on-primary-ct:#DCE3FF;
+    --s-accent:#5FE0B5;
+    --s-grad-a:#3B50C9; --s-grad-b:#5B3FC9; --s-on-grad:#F3F5FF;
+    --s-success-ct:#12502F; --s-on-success-ct:#C7F5D9;
+    --s-warn-ct:#5A3E11; --s-on-warn-ct:#FFE9C2;
+    --s-error-ct:#5B1A1C; --s-on-error-ct:#FFD9DA;
+    --s-skel-a:#1E232D; --s-skel-b:#2A313D;
+    --s-shadow: 2, 4, 12;
+  }
+
+  /* ============================================================ RESET / BASE */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; line-height: 1.1; margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+  p { margin: 0; }
+  a { color: var(--accent-ink); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+  .wrap { max-width: var(--maxw); margin-inline: auto; padding: 0 clamp(20px, 5vw, 44px); }
+
+  /* ============================================================ MASTHEAD */
+  .masthead { padding: clamp(56px, 12vw, 104px) 0 var(--step); }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    margin: 0 0 20px;
+  }
+  .masthead h1 {
+    font-size: clamp(2.6rem, 7vw, 4.4rem);
+    letter-spacing: -0.03em;
+  }
+  .masthead h1 em {
+    font-style: normal;
+    background: linear-gradient(100deg, var(--accent), var(--violet));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .masthead .lede {
+    margin-top: 24px;
+    max-width: 60ch;
+    font-size: clamp(1rem, 2.4vw, 1.2rem);
+    color: var(--muted);
+  }
+  .meta {
+    margin-top: 36px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+  }
+  .meta span {
+    padding: 6px 12px;
+    border: 1px solid var(--hair);
+    border-radius: 999px;
+    color: var(--muted);
+    background: var(--surface);
+  }
+  .meta span b { color: var(--ink); font-weight: 500; }
+
+  /* ============================================================ SECTION SCAFFOLD */
+  section { padding-block: var(--step); border-top: 1px solid var(--hair); }
+  .sec-head { margin-bottom: 44px; }
+  .sec-head h2 { font-size: clamp(1.7rem, 4vw, 2.5rem); letter-spacing: -0.025em; }
+  .sec-head .sub { margin-top: 14px; max-width: 64ch; color: var(--muted); font-size: 1.02rem; }
+
+  /* ============================================================ PHONE FRAME */
+  .frames { display: flex; flex-wrap: wrap; gap: clamp(24px, 5vw, 52px); justify-content: center; }
+  .frame { width: 300px; flex: 0 0 auto; }
+  .frame__cap { margin-top: 18px; text-align: center; }
+  .frame__cap .t { font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
+  .frame__cap .d { margin-top: 4px; font-size: 0.86rem; color: var(--muted); line-height: 1.45; }
+
+  .device {
+    position: relative;
+    width: 300px;
+    padding: 10px;
+    border-radius: 46px;
+    background: #0A0C10;
+    box-shadow:
+      0 2px 4px rgba(0,0,0,.4),
+      0 30px 60px -18px rgba(var(--shadow), .55),
+      inset 0 0 0 1px rgba(255,255,255,.06);
+  }
+  .device__island {
+    position: absolute;
+    top: 20px; left: 50%;
+    width: 92px; height: 26px;
+    transform: translateX(-50%);
+    background: #05070A;
+    border-radius: 999px;
+    z-index: 6;
+  }
+  .screen {
+    position: relative;
+    border-radius: 37px;
+    overflow: hidden;
+    background: var(--s-ground);
+    color: var(--s-ink);
+    font-family: var(--font-body);
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* --- screen: header --- */
+  .sc-header {
+    background: linear-gradient(135deg, var(--s-grad-a), var(--s-grad-b));
+    color: var(--s-on-grad);
+    padding: 14px 16px 48px;
+  }
+  .sc-statusbar {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+    opacity: .95; margin-bottom: 16px; padding-top: 14px;
+  }
+  .sc-statusbar .sig { display: flex; gap: 3px; align-items: center; }
+  .sc-statusbar .sig i { width: 3px; height: 9px; background: currentColor; border-radius: 1px; display: block; opacity: .55; }
+  .sc-statusbar .sig i:nth-child(2){ height: 11px; opacity:.7; }
+  .sc-statusbar .sig i:nth-child(3){ height: 13px; opacity:.85; }
+  .sc-statusbar .sig i:nth-child(4){ height: 15px; }
+  .sc-titlerow { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; min-height: 38px; }
+  .sc-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: -0.02em; }
+  .sc-sub { display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 11px; opacity: .82; }
+  .sc-live { width: 6px; height: 6px; border-radius: 50%; background: #5FE0B5; box-shadow: 0 0 0 0 rgba(95,224,181,.7); animation: pulse 2s infinite; }
+  .sc-refresh {
+    width: 34px; height: 34px; flex: 0 0 auto;
+    border: none; border-radius: 12px;
+    background: rgba(255,255,255,.16);
+    color: var(--s-on-grad);
+    display: grid; place-items: center;
+    font-size: 15px;
+  }
+
+  /* --- screen: body --- */
+  .sc-body { flex: 1; background: var(--s-ground); display: flex; flex-direction: column; min-height: 0; }
+
+  .sc-amount {
+    margin: -32px 16px 0;
+    background: var(--s-surface);
+    border: 1px solid var(--s-hair);
+    border-radius: 22px;
+    padding: 15px 18px 18px;
+    box-shadow: 0 16px 34px -14px rgba(var(--s-shadow), .5);
+  }
+  .sc-amount__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .sc-amount__label { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; color: var(--s-muted); }
+  .sc-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--s-primary-ct); color: var(--s-on-primary-ct);
+    border-radius: 999px; padding: 4px 9px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .sc-pill .sym { font-family: var(--font-mono); }
+  .sc-amount__value { display: flex; align-items: baseline; gap: 7px; }
+  .sc-amount__cur { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--s-muted); }
+  .sc-amount__num { font-family: var(--font-body); font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+  .sc-status { margin: 12px 16px 0; }
+  .sc-fresh {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--s-success-ct); color: var(--s-on-success-ct);
+    border-radius: 999px; padding: 5px 10px;
+    font-size: 10.5px; font-weight: 600;
+  }
+  .sc-fresh .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .sc-banner {
+    display: flex; align-items: center; gap: 9px;
+    background: var(--s-warn-ct); color: var(--s-on-warn-ct);
+    border-radius: 14px; padding: 9px 8px 9px 12px;
+    font-size: 10.5px; line-height: 1.35;
+  }
+  .sc-banner .ico { font-size: 14px; }
+  .sc-banner .grow { flex: 1; }
+  .sc-banner .retry { font-weight: 700; padding: 4px 8px; }
+  .sc-banner .x { opacity: .6; padding-left: 2px; }
+
+  .sc-seclabel { margin: 15px 16px 8px; font-size: 9px; font-weight: 700; letter-spacing: 0.14em; color: var(--s-muted); }
+
+  .sc-results { padding: 0 16px 18px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+  .res {
+    display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 11px;
+    background: var(--s-surface); border: 1px solid var(--s-hair);
+    border-radius: 14px; padding: 11px 12px;
+  }
+  .res__badge {
+    width: 34px; height: 34px; display: grid; place-items: center;
+    background: var(--s-primary-ct); color: var(--s-on-primary-ct);
+    border-radius: 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
+    font-family: var(--font-mono);
+  }
+  .res__name { font-size: 12.5px; font-weight: 600; color: var(--s-ink); }
+  .res__rate { font-size: 10px; color: var(--s-muted); font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .res__amt { font-size: 14.5px; font-weight: 700; color: var(--s-ink); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+  /* skeleton */
+  .sk { background: linear-gradient(100deg, var(--s-skel-a) 28%, var(--s-skel-b) 48%, var(--s-skel-a) 68%); background-size: 220% 100%; animation: shimmer 1.5s linear infinite; border-radius: 6px; }
+  .res--sk .res__badge { background: none; }
+  .sk-badge { width: 34px; height: 34px; border-radius: 10px; }
+  .sk-line { height: 10px; }
+
+  /* error block */
+  .sc-error { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 22px 26px; gap: 10px; }
+  .sc-error__ico { width: 62px; height: 62px; border-radius: 50%; background: var(--s-error-ct); color: var(--s-on-error-ct); display: grid; place-items: center; font-size: 26px; }
+  .sc-error__h { font-family: var(--font-display); font-weight: 700; font-size: 15px; margin-top: 4px; }
+  .sc-error__d { font-size: 11px; color: var(--s-muted); line-height: 1.5; }
+  .sc-error__btn {
+    margin-top: 8px; padding: 10px 20px; border-radius: 13px;
+    background: var(--s-primary); color: var(--s-surface);
+    font-weight: 700; font-size: 12px;
+  }
+  .frame--light .sc-error__btn { color: #fff; }
+
+  .sc-home { width: 104px; height: 5px; border-radius: 999px; background: var(--s-muted); opacity: .5; margin: 7px auto 9px; }
+
+  /* ============================================================ COLOR */
+  .palette { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(24px, 5vw, 48px); }
+  .pal-col > h3 { font-size: 1.05rem; margin-bottom: 6px; }
+  .pal-col > .pc-note { font-size: 0.85rem; color: var(--muted); margin-bottom: 22px; font-family: var(--font-mono); }
+  .pal-group { margin-bottom: 26px; }
+  .pal-group h4 { font-family: var(--font-body); font-weight: 700; font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .sw { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--hair); }
+  .sw:last-child { border-bottom: none; }
+  .sw__chip { width: 44px; height: 44px; border-radius: 11px; border: 1px solid rgba(128,128,128,.22); }
+  .sw__role { font-weight: 700; font-size: 0.92rem; }
+  .sw__hex { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); margin-left: 8px; text-transform: uppercase; }
+  .sw__use { display: block; font-size: 0.82rem; color: var(--muted); margin-top: 1px; }
+  .gradbar { height: 60px; border-radius: 14px; margin-top: 4px; background: linear-gradient(135deg, var(--gA), var(--gB)); }
+  .gradbar + .sw__use { }
+
+  /* ============================================================ TYPE */
+  .faces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 48px; }
+  .face { border: 1px solid var(--hair); border-radius: 16px; padding: 22px; background: var(--surface); }
+  .face__big { font-size: 2.6rem; line-height: 1; letter-spacing: -0.02em; }
+  .face:nth-child(1) .face__big { font-family: var(--font-display); }
+  .face:nth-child(2) .face__big { font-family: var(--font-body); }
+  .face:nth-child(3) .face__big { font-family: var(--font-mono); }
+  .face__name { margin-top: 16px; font-weight: 700; font-size: 0.95rem; }
+  .face__role { font-size: 0.82rem; color: var(--muted); font-family: var(--font-mono); }
+
+  .scale { display: flex; flex-direction: column; }
+  .scale-row { display: grid; grid-template-columns: 130px 1fr; gap: 20px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--hair); }
+  .scale-row:last-child { border-bottom: none; }
+  .scale-row .spec { font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); line-height: 1.5; }
+  .scale-row .spec b { color: var(--ink); font-weight: 500; display: block; text-transform: uppercase; letter-spacing: 0.06em; }
+  .samp-display { font-family: var(--font-display); font-weight: 700; font-size: 2rem; letter-spacing: -0.02em; }
+  .samp-headline { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; letter-spacing: -0.02em; }
+  .samp-title { font-family: var(--font-body); font-weight: 700; font-size: 1.15rem; }
+  .samp-body { font-family: var(--font-body); font-weight: 400; font-size: 1rem; }
+  .samp-label { font-family: var(--font-body); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .samp-amount { font-family: var(--font-body); font-weight: 700; font-size: 2rem; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .samp-data { font-family: var(--font-mono); font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+
+  /* ============================================================ SPACE / RADIUS */
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 6vw, 56px); }
+  .bars { display: flex; flex-direction: column; gap: 12px; }
+  .bar-row { display: grid; grid-template-columns: 78px 1fr; gap: 16px; align-items: center; }
+  .bar-row .lbl { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+  .bar-row .lbl b { color: var(--ink); font-weight: 500; }
+  .bar { height: 16px; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--violet)); }
+  .radii { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+  .radbox { width: 84px; height: 84px; border: 1.5px solid var(--accent); border-bottom: none; border-right: none; background: var(--accent-soft); }
+  .radbox + .rc { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+  .radcell { text-align: center; }
+
+  /* ============================================================ COMPONENTS */
+  .comps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+  .comp {
+    border: 1px solid var(--hair); border-radius: 18px; background: var(--surface);
+    padding: 24px; display: flex; flex-direction: column; gap: 18px;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .comp:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -22px rgba(var(--shadow), .5); }
+  .comp__demo { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 24px; border-radius: 12px; background: var(--surface-2); min-height: 92px; }
+  .comp__name { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
+  .comp__spec { font-size: 0.85rem; color: var(--muted); line-height: 1.55; }
+  .comp__spec code { font-family: var(--font-mono); font-size: 0.82em; color: var(--accent-ink); background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+
+  /* live demo bits (page-theme aware) */
+  .d-btn { border: none; border-radius: 13px; padding: 13px 22px; font-family: var(--font-body); font-weight: 700; font-size: 0.9rem; background: var(--accent); color: #fff; }
+  :root[data-theme="dark"] .d-btn, .d-btn.on-dark { color: #10205C; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .d-btn { color: #10205C; } }
+  .d-btn--ghost { background: transparent; color: var(--accent-ink); box-shadow: inset 0 0 0 1.5px currentColor; }
+  .d-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-soft); color: var(--accent-ink); border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: 0.82rem; }
+  .d-chip .sym { font-family: var(--font-mono); }
+  .d-fresh { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; background: #DCF3E4; color: #0A3D22; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .d-fresh{ background:#12502F; color:#C7F5D9; } }
+  :root[data-theme="dark"] .d-fresh{ background:#12502F; color:#C7F5D9; }
+  .d-fresh .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .d-banner { display: flex; align-items: center; gap: 10px; border-radius: 14px; padding: 11px 12px; font-size: 0.8rem; width: 100%; background: #FDF0DA; color: #5A3B0B; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .d-banner{ background:#5A3E11; color:#FFE9C2; } }
+  :root[data-theme="dark"] .d-banner{ background:#5A3E11; color:#FFE9C2; }
+  .d-banner .grow { flex: 1; }
+  .d-row { display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; align-items: center; width: 100%; background: var(--surface); border: 1px solid var(--hair); border-radius: 13px; padding: 10px 12px; }
+  .d-row .b { width: 32px; height: 32px; border-radius: 9px; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-family: var(--font-mono); font-size: 0.66rem; font-weight: 700; }
+  .d-row .n { font-size: 0.82rem; font-weight: 600; }
+  .d-row .r { font-size: 0.68rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .d-row .a { font-size: 0.92rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .d-input { width: 100%; background: var(--surface); border: 1px solid var(--hair); border-radius: 16px; padding: 14px 16px; }
+  .d-input .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .d-input .top span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; color: var(--muted); }
+  .d-input .val { display: flex; align-items: baseline; gap: 6px; }
+  .d-input .val .c { font-family: var(--font-display); font-weight: 700; color: var(--muted); font-size: 1.1rem; }
+  .d-input .val .num { font-size: 1.7rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+  /* ============================================================ MAPPING TABLE */
+  .map-wrap { overflow-x: auto; border: 1px solid var(--hair); border-radius: 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 520px; }
+  th, td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--hair); }
+  th { font-family: var(--font-body); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); }
+  tr:last-child td { border-bottom: none; }
+  td code { font-family: var(--font-mono); font-size: 0.84em; color: var(--accent-ink); }
+
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-top: 40px; }
+  .note { border: 1px solid var(--hair); border-radius: 14px; padding: 18px 20px; background: var(--surface); }
+  .note h4 { font-family: var(--font-body); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); margin-bottom: 8px; }
+  .note p { font-size: 0.85rem; color: var(--muted); }
+
+  footer { border-top: 1px solid var(--hair); padding: 48px 0 72px; }
+  footer p { font-size: 0.85rem; color: var(--muted); font-family: var(--font-mono); }
+
+  /* ============================================================ ANIMATION */
+  @keyframes shimmer { to { background-position: -220% 0; } }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(95,224,181,.6); }
+    70% { box-shadow: 0 0 0 7px rgba(95,224,181,0); }
+    100% { box-shadow: 0 0 0 0 rgba(95,224,181,0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+    .sk { background-position: 0 0; }
+  }
+
+  /* ============================================================ RESPONSIVE */
+  @media (max-width: 720px) {
+    .palette, .metrics { grid-template-columns: 1fr; }
+    .faces { grid-template-columns: 1fr; }
+    .scale-row { grid-template-columns: 1fr; gap: 8px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Mobile Design System</p>
+    <h1>Currency Converter <em>UI Kit</em></h1>
+    <p class="lede">The complete visual language for a USD&nbsp;&rarr;&nbsp;multi-currency converter: a calm indigo palette in light and dark, a three-voice type system, spacing rhythm, and every screen state a person actually meets &mdash; fresh rates, offline fallback, and a service outage.</p>
+    <div class="meta">
+      <span><b>Platform</b>&nbsp; iOS &amp; Android</span>
+      <span><b>Themes</b>&nbsp; Light + Dark</span>
+      <span><b>Base grid</b>&nbsp; 4&nbsp;pt</span>
+      <span><b>Corner</b>&nbsp; 10&ndash;28&nbsp;px</span>
+      <span><b>Maps to</b>&nbsp; lib/core/theme/</span>
+    </div>
+  </header>
+
+  <!-- ========================= THE SCREEN ========================= -->
+  <section id="screen">
+    <div class="sec-head">
+      <h2>The screen</h2>
+      <p class="sub">One task, one view. A gradient header carries identity and the live-rate pulse; a card floats over its edge so the amount you're entering is always the brightest thing on screen. Results are cards, not table rows &mdash; each pairs the converted figure with the exact rate behind it.</p>
+    </div>
+    <div class="frames">
+
+      <!-- LIGHT / READY -->
+      <div class="frame frame--light">
+        <div class="device">
+          <div class="device__island"></div>
+          <div class="screen screen--ready">
+            <div class="sc-header">
+              <div class="sc-statusbar"><span>9:41</span><span class="sig"><i></i><i></i><i></i><i></i></span></div>
+              <div class="sc-titlerow">
+                <div>
+                  <div class="sc-title">Currency Converter</div>
+                  <div class="sc-sub"><span class="sc-live"></span> Live USD exchange rates</div>
+                </div>
+                <button class="sc-refresh" aria-label="Refresh rates">&#8635;</button>
+              </div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-amount">
+                <div class="sc-amount__top">
+                  <span class="sc-amount__label">AMOUNT TO CONVERT</span>
+                  <span class="sc-pill"><span class="sym">$</span> USD</span>
+                </div>
+                <div class="sc-amount__value"><span class="sc-amount__cur">$</span><span class="sc-amount__num">1,000.00</span></div>
+              </div>
+              <div class="sc-status"><span class="sc-fresh"><span class="dot"></span> Rates updated 4 min ago</span></div>
+              <div class="sc-seclabel">YOU'LL RECEIVE</div>
+              <div class="sc-results">
+                <div class="res"><span class="res__badge">EUR</span><span><div class="res__name">Euro</div><div class="res__rate">1 USD = 0.9165</div></span><span class="res__amt">916.50</span></div>
+                <div class="res"><span class="res__badge">GBP</span><span><div class="res__name">British Pound</div><div class="res__rate">1 USD = 0.7845</div></span><span class="res__amt">784.50</span></div>
+                <div class="res"><span class="res__badge">JPY</span><span><div class="res__name">Japanese Yen</div><div class="res__rate">1 USD = 147.32</div></span><span class="res__amt">147,320</span></div>
+                <div class="res"><span class="res__badge">AUD</span><span><div class="res__name">Australian Dollar</div><div class="res__rate">1 USD = 1.5230</div></span><span class="res__amt">1,523.00</span></div>
+                <div class="res"><span class="res__badge">CAD</span><span><div class="res__name">Canadian Dollar</div><div class="res__rate">1 USD = 1.3780</div></span><span class="res__amt">1,378.00</span></div>
+              </div>
+            </div>
+            <div class="sc-home"></div>
+          </div>
+        </div>
+        <div class="frame__cap"><div class="t">Ready &middot; Light</div><div class="d">Fresh cache &mdash; served without a network call.</div></div>
+      </div>
+
+      <!-- DARK / READY -->
+      <div class="frame frame--dark">
+        <div class="device">
+          <div class="device__island"></div>
+          <div class="screen screen--ready">
+            <div class="sc-header">
+              <div class="sc-statusbar"><span>9:41</span><span class="sig"><i></i><i></i><i></i><i></i></span></div>
+              <div class="sc-titlerow">
+                <div>
+                  <div class="sc-title">Currency Converter</div>
+                  <div class="sc-sub"><span class="sc-live"></span> Live USD exchange rates</div>
+                </div>
+                <button class="sc-refresh" aria-label="Refresh rates">&#8635;</button>
+              </div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-amount">
+                <div class="sc-amount__top">
+                  <span class="sc-amount__label">AMOUNT TO CONVERT</span>
+                  <span class="sc-pill"><span class="sym">$</span> USD</span>
+                </div>
+                <div class="sc-amount__value"><span class="sc-amount__cur">$</span><span class="sc-amount__num">1,000.00</span></div>
+              </div>
+              <div class="sc-status"><span class="sc-fresh"><span class="dot"></span> Rates updated 4 min ago</span></div>
+              <div class="sc-seclabel">YOU'LL RECEIVE</div>
+              <div class="sc-results">
+                <div class="res"><span class="res__badge">EUR</span><span><div class="res__name">Euro</div><div class="res__rate">1 USD = 0.9165</div></span><span class="res__amt">916.50</span></div>
+                <div class="res"><span class="res__badge">GBP</span><span><div class="res__name">British Pound</div><div class="res__rate">1 USD = 0.7845</div></span><span class="res__amt">784.50</span></div>
+                <div class="res"><span class="res__badge">JPY</span><span><div class="res__name">Japanese Yen</div><div class="res__rate">1 USD = 147.32</div></span><span class="res__amt">147,320</span></div>
+                <div class="res"><span class="res__badge">AUD</span><span><div class="res__name">Australian Dollar</div><div class="res__rate">1 USD = 1.5230</div></span><span class="res__amt">1,523.00</span></div>
+                <div class="res"><span class="res__badge">CAD</span><span><div class="res__name">Canadian Dollar</div><div class="res__rate">1 USD = 1.3780</div></span><span class="res__amt">1,378.00</span></div>
+              </div>
+            </div>
+            <div class="sc-home"></div>
+          </div>
+        </div>
+        <div class="frame__cap"><div class="t">Ready &middot; Dark</div><div class="d">Same tokens, dark ground. The accent lifts, contrast holds.</div></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================= SCREEN STATES ========================= -->
+  <section id="states">
+    <div class="sec-head">
+      <h2>Every state a person meets</h2>
+      <p class="sub">Rates are cached for an hour and the app is honest about what it's showing. Offline with a cached copy? You keep the numbers plus a plain-language banner. Nothing cached and the network is down? A full stop with one clear way forward.</p>
+    </div>
+    <div class="frames">
+
+      <!-- LIGHT / LOADING -->
+      <div class="frame frame--light">
+        <div class="device">
+          <div class="device__island"></div>
+          <div class="screen">
+            <div class="sc-header">
+              <div class="sc-statusbar"><span>9:41</span><span class="sig"><i></i><i></i><i></i><i></i></span></div>
+              <div class="sc-titlerow">
+                <div><div class="sc-title">Currency Converter</div><div class="sc-sub"><span class="sc-live"></span> Live USD exchange rates</div></div>
+                <button class="sc-refresh" aria-label="Refresh rates">&#8635;</button>
+              </div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-amount">
+                <div class="sc-amount__top"><span class="sc-amount__label">AMOUNT TO CONVERT</span><span class="sc-pill"><span class="sym">$</span> USD</span></div>
+                <div class="sc-amount__value"><span class="sc-amount__cur">$</span><span class="sc-amount__num">1,000.00</span></div>
+              </div>
+              <div class="sc-seclabel">YOU'LL RECEIVE</div>
+              <div class="sc-results">
+                <div class="res res--sk"><span class="res__badge"><span class="sk sk-badge"></span></span><span><div class="sk sk-line" style="width:58%"></div><div class="sk sk-line" style="width:78%;margin-top:7px;height:8px"></div></span><span class="sk sk-line" style="width:46px;height:13px"></span></div>
+                <div class="res res--sk"><span class="res__badge"><span class="sk sk-badge"></span></span><span><div class="sk sk-line" style="width:70%"></div><div class="sk sk-line" style="width:64%;margin-top:7px;height:8px"></div></span><span class="sk sk-line" style="width:46px;height:13px"></span></div>
+                <div class="res res--sk"><span class="res__badge"><span class="sk sk-badge"></span></span><span><div class="sk sk-line" style="width:52%"></div><div class="sk sk-line" style="width:82%;margin-top:7px;height:8px"></div></span><span class="sk sk-line" style="width:46px;height:13px"></span></div>
+                <div class="res res--sk"><span class="res__badge"><span class="sk sk-badge"></span></span><span><div class="sk sk-line" style="width:64%"></div><div class="sk sk-line" style="width:70%;margin-top:7px;height:8px"></div></span><span class="sk sk-line" style="width:46px;height:13px"></span></div>
+                <div class="res res--sk"><span class="res__badge"><span class="sk sk-badge"></span></span><span><div class="sk sk-line" style="width:60%"></div><div class="sk sk-line" style="width:76%;margin-top:7px;height:8px"></div></span><span class="sk sk-line" style="width:46px;height:13px"></span></div>
+              </div>
+            </div>
+            <div class="sc-home"></div>
+          </div>
+        </div>
+        <div class="frame__cap"><div class="t">First load</div><div class="d">No cache yet. Skeleton rows hold the layout so nothing jumps when data lands.</div></div>
+      </div>
+
+      <!-- LIGHT / OFFLINE -->
+      <div class="frame frame--light">
+        <div class="device">
+          <div class="device__island"></div>
+          <div class="screen">
+            <div class="sc-header">
+              <div class="sc-statusbar"><span>9:41</span><span class="sig"><i></i><i></i><i style="opacity:.25"></i><i style="opacity:.15"></i></span></div>
+              <div class="sc-titlerow">
+                <div><div class="sc-title">Currency Converter</div><div class="sc-sub"><span class="sc-live" style="background:#F5A524;animation:none"></span> Showing saved rates</div></div>
+                <button class="sc-refresh" aria-label="Refresh rates">&#8635;</button>
+              </div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-amount">
+                <div class="sc-amount__top"><span class="sc-amount__label">AMOUNT TO CONVERT</span><span class="sc-pill"><span class="sym">$</span> USD</span></div>
+                <div class="sc-amount__value"><span class="sc-amount__cur">$</span><span class="sc-amount__num">1,000.00</span></div>
+              </div>
+              <div class="sc-status">
+                <div class="sc-banner">
+                  <span class="ico">&#9888;</span>
+                  <span class="grow">You&rsquo;re offline &mdash; showing rates from 2&nbsp;h ago.</span>
+                  <span class="retry">Retry</span><span class="x">&times;</span>
+                </div>
+              </div>
+              <div class="sc-seclabel">YOU'LL RECEIVE</div>
+              <div class="sc-results">
+                <div class="res"><span class="res__badge">EUR</span><span><div class="res__name">Euro</div><div class="res__rate">1 USD = 0.9152</div></span><span class="res__amt">915.20</span></div>
+                <div class="res"><span class="res__badge">GBP</span><span><div class="res__name">British Pound</div><div class="res__rate">1 USD = 0.7831</div></span><span class="res__amt">783.10</span></div>
+                <div class="res"><span class="res__badge">JPY</span><span><div class="res__name">Japanese Yen</div><div class="res__rate">1 USD = 147.05</div></span><span class="res__amt">147,050</span></div>
+                <div class="res"><span class="res__badge">AUD</span><span><div class="res__name">Australian Dollar</div><div class="res__rate">1 USD = 1.5198</div></span><span class="res__amt">1,519.80</span></div>
+                <div class="res"><span class="res__badge">CAD</span><span><div class="res__name">Canadian Dollar</div><div class="res__rate">1 USD = 1.3762</div></span><span class="res__amt">1,376.20</span></div>
+              </div>
+            </div>
+            <div class="sc-home"></div>
+          </div>
+        </div>
+        <div class="frame__cap"><div class="t">Offline &middot; stale cache</div><div class="d">Numbers stay usable; an amber banner names the reason and offers a retry. Dismissible.</div></div>
+      </div>
+
+      <!-- DARK / ERROR -->
+      <div class="frame frame--dark">
+        <div class="device">
+          <div class="device__island"></div>
+          <div class="screen">
+            <div class="sc-header">
+              <div class="sc-statusbar"><span>9:41</span><span class="sig"><i></i><i></i><i></i><i></i></span></div>
+              <div class="sc-titlerow">
+                <div><div class="sc-title">Currency Converter</div><div class="sc-sub">Live USD exchange rates</div></div>
+                <button class="sc-refresh" aria-label="Refresh rates">&#8635;</button>
+              </div>
+            </div>
+            <div class="sc-body">
+              <div class="sc-amount">
+                <div class="sc-amount__top"><span class="sc-amount__label">AMOUNT TO CONVERT</span><span class="sc-pill"><span class="sym">$</span> USD</span></div>
+                <div class="sc-amount__value"><span class="sc-amount__cur">$</span><span class="sc-amount__num">1,000.00</span></div>
+              </div>
+              <div class="sc-error">
+                <div class="sc-error__ico">&#9729;</div>
+                <div class="sc-error__h">Rates are unavailable</div>
+                <div class="sc-error__d">The exchange-rate service is having problems and there&rsquo;s no saved copy yet. Please try again in a moment.</div>
+                <div class="sc-error__btn">&#8635;&nbsp; Try again</div>
+              </div>
+            </div>
+            <div class="sc-home"></div>
+          </div>
+        </div>
+        <div class="frame__cap"><div class="t">Service outage &middot; no cache</div><div class="d">A typed error, not a toast. Copy differs for offline vs. server vs. unreadable cache.</div></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================= COLOR ========================= -->
+  <section id="color">
+    <div class="sec-head">
+      <h2>Color</h2>
+      <p class="sub">Indigo leads because it reads as calm and dependable next to money. Emerald is reserved for &ldquo;you receive&rdquo; and healthy status &mdash; it is not a second accent. Neutrals carry a faint indigo bias so greys feel chosen, not default. Every role is defined for both themes; components only ever read tokens.</p>
+    </div>
+    <div class="palette">
+
+      <div class="pal-col">
+        <h3>Light</h3>
+        <p class="pc-note">ground #F7F8FC &middot; surface #FFFFFF</p>
+
+        <div class="pal-group">
+          <h4>Brand</h4>
+          <div class="sw"><span class="sw__chip" style="background:#4F6CF7"></span><span><span class="sw__role">Primary <span class="sw__hex">#4F6CF7</span></span><span class="sw__use">Actions, focus ring, USD pill, badges</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#E4E9FF"></span><span><span class="sw__role">Primary container <span class="sw__hex">#E4E9FF</span></span><span class="sw__use">Chip &amp; badge fills, on&nbsp;#14235C</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#0FB981"></span><span><span class="sw__role">Accent / secondary <span class="sw__hex">#0FB981</span></span><span class="sw__use">&ldquo;You receive&rdquo;, healthy status</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#7C5CFC"></span><span><span class="sw__role">Violet / tertiary <span class="sw__hex">#7C5CFC</span></span><span class="sw__use">Header gradient end only</span></span></div>
+        </div>
+
+        <div class="pal-group">
+          <h4>Semantic</h4>
+          <div class="sw"><span class="sw__chip" style="background:#12A150"></span><span><span class="sw__role">Success <span class="sw__hex">#12A150</span></span><span class="sw__use">Fresh-rates pill &middot; container #DCF3E4</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#F5A524"></span><span><span class="sw__role">Warning <span class="sw__hex">#F5A524</span></span><span class="sw__use">Offline / stale banner &middot; container #FDF0DA</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#E5484D"></span><span><span class="sw__role">Error <span class="sw__hex">#E5484D</span></span><span class="sw__use">Full-screen failure &middot; container #FCE9E9</span></span></div>
+        </div>
+
+        <div class="pal-group">
+          <h4>Neutrals</h4>
+          <div class="sw"><span class="sw__chip" style="background:#F7F8FC"></span><span><span class="sw__role">Ground <span class="sw__hex">#F7F8FC</span></span><span class="sw__use">Scaffold behind cards</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#EAEEF6"></span><span><span class="sw__role">Surface&nbsp;2 <span class="sw__hex">#EAEEF6</span></span><span class="sw__use">Flag tile, inset wells</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#1B1F2A"></span><span><span class="sw__role">Ink <span class="sw__hex">#1B1F2A</span></span><span class="sw__use">Primary text, amounts</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#5B6478"></span><span><span class="sw__role">Muted <span class="sw__hex">#5B6478</span></span><span class="sw__use">Labels, rate lines, captions</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#E7EBF3"></span><span><span class="sw__role">Hairline <span class="sw__hex">#E7EBF3</span></span><span class="sw__use">1px card borders, dividers</span></span></div>
+        </div>
+
+        <div class="pal-group">
+          <h4>Header gradient</h4>
+          <div class="gradbar" style="--gA:#4F6CF7;--gB:#7C5CFC"></div>
+          <span class="sw__use" style="display:block;margin-top:8px">135&deg; &middot; Primary&nbsp;&rarr;&nbsp;Violet &middot; text uses on&#8209;gradient&nbsp;#FFFFFF</span>
+        </div>
+      </div>
+
+      <div class="pal-col">
+        <h3>Dark</h3>
+        <p class="pc-note">ground #0E1117 &middot; surface #161A22</p>
+
+        <div class="pal-group">
+          <h4>Brand</h4>
+          <div class="sw"><span class="sw__chip" style="background:#9DB0FF"></span><span><span class="sw__role">Primary <span class="sw__hex">#9DB0FF</span></span><span class="sw__use">Lifted for contrast on dark ground</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#2A3A8F"></span><span><span class="sw__role">Primary container <span class="sw__hex">#2A3A8F</span></span><span class="sw__use">Chip &amp; badge fills, on&nbsp;#DCE3FF</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#5FE0B5"></span><span><span class="sw__role">Accent / secondary <span class="sw__hex">#5FE0B5</span></span><span class="sw__use">&ldquo;You receive&rdquo;, live-pulse dot</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#C3B0FF"></span><span><span class="sw__role">Violet / tertiary <span class="sw__hex">#C3B0FF</span></span><span class="sw__use">Decorative accents</span></span></div>
+        </div>
+
+        <div class="pal-group">
+          <h4>Semantic</h4>
+          <div class="sw"><span class="sw__chip" style="background:#4ED88A"></span><span><span class="sw__role">Success <span class="sw__hex">#4ED88A</span></span><span class="sw__use">Fresh pill &middot; container #12502F</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#FFC24B"></span><span><span class="sw__role">Warning <span class="sw__hex">#FFC24B</span></span><span class="sw__use">Offline banner &middot; container #5A3E11</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#FF6B6E"></span><span><span class="sw__role">Error <span class="sw__hex">#FF6B6E</span></span><span class="sw__use">Failure state &middot; container #5B1A1C</span></span></div>
+        </div>
+
+        <div class="pal-group">
+          <h4>Neutrals</h4>
+          <div class="sw"><span class="sw__chip" style="background:#0E1117"></span><span><span class="sw__role">Ground <span class="sw__hex">#0E1117</span></span><span class="sw__use">Scaffold behind cards</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#1E232D"></span><span><span class="sw__role">Surface&nbsp;2 <span class="sw__hex">#1E232D</span></span><span class="sw__use">Flag tile, inset wells</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#E6E9F0"></span><span><span class="sw__role">Ink <span class="sw__hex">#E6E9F0</span></span><span class="sw__use">Primary text, amounts</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#9AA3B2"></span><span><span class="sw__role">Muted <span class="sw__hex">#9AA3B2</span></span><span class="sw__use">Labels, rate lines, captions</span></span></div>
+          <div class="sw"><span class="sw__chip" style="background:#262C38"></span><span><span class="sw__role">Hairline <span class="sw__hex">#262C38</span></span><span class="sw__use">1px borders, dividers</span></span></div>
+        </div>
+
+        <div class="pal-group">
+          <h4>Header gradient</h4>
+          <div class="gradbar" style="--gA:#3B50C9;--gB:#5B3FC9"></div>
+          <span class="sw__use" style="display:block;margin-top:8px">135&deg; &middot; deeper stops so white text still clears AA</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================= TYPE ========================= -->
+  <section id="type">
+    <div class="sec-head">
+      <h2>Type &mdash; three voices</h2>
+      <p class="sub">A characterful grotesque for headlines, a quiet humanist grotesque for everything you operate, and a monospace for the data that must line up &mdash; rates, hex values, tokens. Amounts use the body face with tabular figures so columns of digits never shift.</p>
+    </div>
+    <div class="faces">
+      <div class="face"><div class="face__big">Ag&nbsp;$1,000</div><div class="face__name">Bricolage Grotesque</div><div class="face__role">display &middot; 700 &middot; headlines only</div></div>
+      <div class="face"><div class="face__big">Ag&nbsp;$1,000</div><div class="face__name">Hanken Grotesk</div><div class="face__role">body &amp; UI &middot; 400 / 600 / 700</div></div>
+      <div class="face"><div class="face__big">Ag&nbsp;0.9165</div><div class="face__name">IBM Plex Mono</div><div class="face__role">data &middot; 400 / 500 &middot; tabular</div></div>
+    </div>
+    <div class="scale">
+      <div class="scale-row"><div class="spec"><b>Display</b>Bricolage 32 / 700<br>tracking &minus;0.02em</div><div class="samp-display">Currency Converter</div></div>
+      <div class="scale-row"><div class="spec"><b>Headline</b>Bricolage 22 / 700<br>section titles</div><div class="samp-headline">Every state a person meets</div></div>
+      <div class="scale-row"><div class="spec"><b>Title</b>Hanken 18 / 700<br>card headings</div><div class="samp-title">Rates are unavailable</div></div>
+      <div class="scale-row"><div class="spec"><b>Body</b>Hanken 15 / 400<br>line-height 1.5</div><div class="samp-body">Cached for an hour, then refreshed on next open.</div></div>
+      <div class="scale-row"><div class="spec"><b>Label</b>Hanken 12 / 700<br>+0.14em &middot; uppercase</div><div class="samp-label">You&rsquo;ll receive</div></div>
+      <div class="scale-row"><div class="spec"><b>Amount</b>Hanken 32 / 700<br>tabular-nums</div><div class="samp-amount">147,320</div></div>
+      <div class="scale-row"><div class="spec"><b>Data</b>Plex Mono 13 / 400<br>tabular-nums</div><div class="samp-data">1 USD = 0.9165 EUR</div></div>
+    </div>
+  </section>
+
+  <!-- ========================= SPACE / RADIUS ========================= -->
+  <section id="metrics">
+    <div class="sec-head">
+      <h2>Spacing &amp; radius</h2>
+      <p class="sub">One 4-point scale governs every gap and inset. Radius climbs with surface size: chips are near-round, result cards sit at 14, the amount card at 22, the phone-safe hero rounding at 28.</p>
+    </div>
+    <div class="metrics">
+      <div>
+        <div class="bars">
+          <div class="bar-row"><span class="lbl"><b>xs</b> 4</span><span class="bar" style="width:4px"></span></div>
+          <div class="bar-row"><span class="lbl"><b>sm</b> 8</span><span class="bar" style="width:8px"></span></div>
+          <div class="bar-row"><span class="lbl"><b>md</b> 12</span><span class="bar" style="width:12px"></span></div>
+          <div class="bar-row"><span class="lbl"><b>lg</b> 16</span><span class="bar" style="width:16px"></span></div>
+          <div class="bar-row"><span class="lbl"><b>xl</b> 24</span><span class="bar" style="width:24px"></span></div>
+          <div class="bar-row"><span class="lbl"><b>xxl</b> 32</span><span class="bar" style="width:32px"></span></div>
+          <div class="bar-row"><span class="lbl"><b>xxxl</b> 48</span><span class="bar" style="width:48px"></span></div>
+        </div>
+      </div>
+      <div>
+        <div class="radii">
+          <div class="radcell"><div class="radbox" style="border-radius:10px 0 0 0"></div><div class="rc">sm &middot; 10</div></div>
+          <div class="radcell"><div class="radbox" style="border-radius:14px 0 0 0"></div><div class="rc">md &middot; 14</div></div>
+          <div class="radcell"><div class="radbox" style="border-radius:20px 0 0 0"></div><div class="rc">lg &middot; 20</div></div>
+          <div class="radcell"><div class="radbox" style="border-radius:28px 0 0 0"></div><div class="rc">xl &middot; 28</div></div>
+          <div class="radcell"><div class="radbox" style="border-radius:44px 0 0 0"></div><div class="rc">pill &middot; 999</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= COMPONENTS ========================= -->
+  <section id="components">
+    <div class="sec-head">
+      <h2>Components</h2>
+      <p class="sub">Each maps to one Flutter widget under <code style="font-family:var(--font-mono);font-size:.85em">lib/presentation/</code>. Live here, themed by the page &mdash; hover a card to lift it.</p>
+    </div>
+    <div class="comps">
+
+      <div class="comp">
+        <div class="comp__demo">
+          <button class="d-btn">Try again</button>
+          <button class="d-btn d-btn--ghost">Retry</button>
+        </div>
+        <div>
+          <div class="comp__name">Buttons</div>
+          <p class="comp__spec">Filled for the single primary action (min height <code>52</code>, radius <code>14</code>). Ghost/text for in-banner retry. Label states the outcome &mdash; never &ldquo;OK&rdquo;.</p>
+        </div>
+      </div>
+
+      <div class="comp">
+        <div class="comp__demo" style="padding:16px">
+          <div class="d-input">
+            <div class="top"><span>AMOUNT TO CONVERT</span><span class="d-chip"><span class="sym">$</span> USD</span></div>
+            <div class="val"><span class="c">$</span><span class="num">1,000.00</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="comp__name">Amount card</div>
+          <p class="comp__spec">The hero input. Radius <code>22</code>, floats <code>-32</code> over the header edge. Digits + one decimal only; empty parses to 0, never an error.</p>
+        </div>
+      </div>
+
+      <div class="comp">
+        <div class="comp__demo" style="padding:16px">
+          <div class="d-row"><span class="b">EUR</span><span><div class="n">Euro</div><div class="r">1 USD = 0.9165</div></span><span class="a">916.50</span></div>
+        </div>
+        <div>
+          <div class="comp__name">Result card</div>
+          <p class="comp__spec">Badge + name + rate + amount on a <code>14</code> radius. Amount is tabular; JPY shows 0 decimals, the rest 2. Tap copies the figure.</p>
+        </div>
+      </div>
+
+      <div class="comp">
+        <div class="comp__demo">
+          <span class="d-fresh"><span class="dot"></span> Rates updated 4 min ago</span>
+        </div>
+        <div>
+          <div class="comp__name">Fresh pill</div>
+          <p class="comp__spec">Success container, pill radius. Swaps to a spinner + &ldquo;Updating rates&hellip;&rdquo; during a background refresh &mdash; the list never blanks.</p>
+        </div>
+      </div>
+
+      <div class="comp">
+        <div class="comp__demo">
+          <div class="d-banner"><span>&#9888;</span><span class="grow">You&rsquo;re offline &mdash; showing rates from 2&nbsp;h ago.</span><b>Retry</b><span>&times;</span></div>
+        </div>
+        <div>
+          <div class="comp__name">Offline / stale banner</div>
+          <p class="comp__spec">Warning container, radius <code>14</code>, dismissible. Wording differs for &ldquo;offline&rdquo; vs &ldquo;service unavailable&rdquo;. Retry re-runs the fetch.</p>
+        </div>
+      </div>
+
+      <div class="comp">
+        <div class="comp__demo" style="padding:16px">
+          <div class="d-row"><span class="b" style="background:none;padding:0"><span class="sk" style="width:32px;height:32px;border-radius:9px;display:block"></span></span><span style="width:100%"><span class="sk" style="display:block;height:9px;width:60%;border-radius:5px"></span><span class="sk" style="display:block;height:8px;width:80%;border-radius:5px;margin-top:6px"></span></span><span class="sk" style="width:40px;height:12px;border-radius:5px"></span></div>
+        </div>
+        <div>
+          <div class="comp__name">Skeleton row</div>
+          <p class="comp__spec">Shown only on first load with no cache. Pulses between the two skeleton tokens; identical geometry to the real row so nothing reflows.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================= MAPPING ========================= -->
+  <section id="mapping">
+    <div class="sec-head">
+      <h2>How it maps to code</h2>
+      <p class="sub">The kit isn&rsquo;t a separate artefact &mdash; every token here already exists in the Flutter app&rsquo;s theme layer, so a value changed in design is a one-line change in code.</p>
+    </div>
+    <div class="map-wrap">
+      <table>
+        <thead><tr><th>Kit element</th><th>Flutter source</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Spacing &amp; radius scale</td><td><code>lib/core/theme/app_spacing.dart</code></td><td><code>AppSpacing</code> / <code>AppRadius</code> constants</td></tr>
+          <tr><td>Semantic + gradient + skeleton colors</td><td><code>lib/core/theme/app_colors.dart</code></td><td><code>AppColors</code> ThemeExtension, light + dark</td></tr>
+          <tr><td>ColorScheme, type scale, component themes</td><td><code>lib/core/theme/app_theme.dart</code></td><td><code>AppTheme.light</code> / <code>AppTheme.dark</code></td></tr>
+          <tr><td>Amount card</td><td><code>presentation/widgets/amount_input.dart</code></td><td>Hero input + USD pill</td></tr>
+          <tr><td>Result card</td><td><code>presentation/widgets/conversion_row.dart</code></td><td>Tap-to-copy</td></tr>
+          <tr><td>Fresh pill / offline banner</td><td><code>presentation/widgets/status_banner.dart</code></td><td>Reason-aware wording</td></tr>
+          <tr><td>Skeleton row</td><td><code>presentation/widgets/shimmer_box.dart</code></td><td>Pulse via <code>AnimationController</code></td></tr>
+          <tr><td>Screen states (loading / error / ready)</td><td><code>presentation/pages/converter_page.dart</code></td><td>Driven by <code>ConverterController</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="notes">
+      <div class="note"><h4>Contrast</h4><p>Body and label text clears WCAG AA on every surface in both themes; the gradient uses white text and deepens its stops in dark mode to stay above 4.5:1.</p></div>
+      <div class="note"><h4>Touch targets</h4><p>Every tappable element is at least 44&times;44&nbsp;px including the banner&rsquo;s retry and dismiss controls.</p></div>
+      <div class="note"><h4>Motion</h4><p>Only two animations &mdash; the live-rate pulse and the skeleton shimmer. Both stop under <code>prefers-reduced-motion</code>.</p></div>
+      <div class="note"><h4>Focus</h4><p>Keyboard focus shows a 2&nbsp;px primary outline offset from the element; never removed, only restyled.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Currency Converter UI Kit &middot; light + dark &middot; tokens mirror lib/core/theme/</p>
+  </footer>
+
+</div>

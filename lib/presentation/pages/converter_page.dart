@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants.dart';
 import '../../core/errors.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../controllers/converter_controller.dart';
+import '../controllers/theme_controller.dart';
 import '../widgets/amount_input.dart';
 import '../widgets/conversion_row.dart';
 import '../widgets/shimmer_box.dart';
 import '../widgets/status_banner.dart';
+import 'currency_picker_page.dart';
 
 /// The single screen. A gradient header sits behind a floating amount card;
 /// below it the body swaps between skeleton / error / results driven purely by
 /// [ConverterController] via [ListenableBuilder].
 class ConverterPage extends StatefulWidget {
-  const ConverterPage({super.key, required this.controller});
+  const ConverterPage({
+    super.key,
+    required this.controller,
+    required this.themeController,
+  });
 
   final ConverterController controller;
+  final ThemeController themeController;
 
   @override
   State<ConverterPage> createState() => _ConverterPageState();
@@ -35,6 +41,19 @@ class _ConverterPageState extends State<ConverterPage> {
   void dispose() {
     _amountController.dispose();
     super.dispose();
+  }
+
+  void _clearAmount() {
+    _amountController.clear();
+    widget.controller.updateAmount('');
+  }
+
+  void _openCurrencyPicker() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CurrencyPickerPage(controller: widget.controller),
+      ),
+    );
   }
 
   @override
@@ -67,12 +86,16 @@ class _ConverterPageState extends State<ConverterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                _HeaderBar(onRefresh: widget.controller.refresh),
+                _HeaderBar(
+                  onRefresh: widget.controller.refresh,
+                  themeController: widget.themeController,
+                ),
                 Padding(
                   padding: AppSpacing.screen,
                   child: AmountInput(
                     controller: _amountController,
                     onChanged: widget.controller.updateAmount,
+                    onClear: _clearAmount,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -82,7 +105,8 @@ class _ConverterPageState extends State<ConverterPage> {
                     builder: (BuildContext context, _) {
                       final ConverterState state = widget.controller.state;
                       return switch (state.status) {
-                        ConverterStatus.loading => const _SkeletonBody(),
+                        ConverterStatus.loading =>
+                          _SkeletonBody(rowCount: state.selected.length),
                         ConverterStatus.error => _ErrorBody(
                             error: state.error!,
                             onRetry: widget.controller.retry,
@@ -90,6 +114,8 @@ class _ConverterPageState extends State<ConverterPage> {
                         ConverterStatus.ready => _ResultsBody(
                             state: state,
                             onRefresh: widget.controller.refresh,
+                            onReorder: widget.controller.reorderCurrencies,
+                            onManageCurrencies: _openCurrencyPicker,
                           ),
                       };
                     },
@@ -104,11 +130,12 @@ class _ConverterPageState extends State<ConverterPage> {
   }
 }
 
-/// Title + subtitle on the gradient, with a refresh action.
+/// Title + subtitle on the gradient, with theme-toggle and refresh actions.
 class _HeaderBar extends StatelessWidget {
-  const _HeaderBar({required this.onRefresh});
+  const _HeaderBar({required this.onRefresh, required this.themeController});
 
   final Future<void> Function() onRefresh;
+  final ThemeController themeController;
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +145,7 @@ class _HeaderBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.xl,
         AppSpacing.lg,
-        AppSpacing.sm,
+        AppSpacing.xs,
         AppSpacing.lg,
       ),
       child: Row(
@@ -140,6 +167,25 @@ class _HeaderBar extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          ListenableBuilder(
+            listenable: themeController,
+            builder: (BuildContext context, _) {
+              final (IconData icon, String label) =
+                  switch (themeController.mode) {
+                ThemeMode.system => (
+                    Icons.brightness_auto_rounded,
+                    'Theme: follow system',
+                  ),
+                ThemeMode.light => (Icons.light_mode_rounded, 'Theme: light'),
+                ThemeMode.dark => (Icons.dark_mode_rounded, 'Theme: dark'),
+              };
+              return IconButton(
+                onPressed: themeController.cycle,
+                icon: Icon(icon, color: colors.onGradient),
+                tooltip: label,
+              );
+            },
           ),
           IconButton(
             onPressed: onRefresh,
@@ -172,16 +218,25 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// Results list. Pull-to-refresh and the header button share one code path.
+/// Results list. Drag to reorder; pull-to-refresh and the header button share
+/// one code path; the footer opens the currency picker.
 class _ResultsBody extends StatelessWidget {
-  const _ResultsBody({required this.state, required this.onRefresh});
+  const _ResultsBody({
+    required this.state,
+    required this.onRefresh,
+    required this.onReorder,
+    required this.onManageCurrencies,
+  });
 
   final ConverterState state;
   final Future<void> Function() onRefresh;
+  final void Function(int oldIndex, int newIndex) onReorder;
+  final VoidCallback onManageCurrencies;
 
   @override
   Widget build(BuildContext context) {
     final Map<String, double> rates = state.rates ?? const <String, double>{};
+    final ColorScheme scheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -191,22 +246,55 @@ class _ResultsBody extends StatelessWidget {
         Expanded(
           child: RefreshIndicator(
             onRefresh: onRefresh,
-            child: ListView.separated(
+            child: ReorderableListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
                 0,
                 AppSpacing.lg,
-                AppSpacing.xxl,
+                AppSpacing.md,
               ),
-              itemCount: kTargetCurrencies.length,
-              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
+              itemCount: state.selected.length,
+              onReorderItem: onReorder,
+              footer: Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.md),
+                child: OutlinedButton.icon(
+                  onPressed: onManageCurrencies,
+                  icon: const Icon(Icons.tune_rounded, size: 18),
+                  label: const Text('Manage currencies'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    side: BorderSide(color: scheme.outlineVariant),
+                  ),
+                ),
+              ),
               itemBuilder: (BuildContext context, int index) {
-                final String code = kTargetCurrencies[index];
-                return ConversionRow(
-                  code: code,
-                  rate: rates[code] ?? 0,
-                  convertedAmount: state.conversions[code] ?? 0,
+                final String code = state.selected[index];
+                return Padding(
+                  key: ValueKey<String>(code),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: ConversionRow(
+                          code: code,
+                          rate: rates[code] ?? 0,
+                          convertedAmount: state.conversions[code] ?? 0,
+                        ),
+                      ),
+                      ReorderableDragStartListener(
+                        index: index,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: AppSpacing.xs),
+                          child: Icon(
+                            Icons.drag_indicator_rounded,
+                            color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -219,7 +307,9 @@ class _ResultsBody extends StatelessWidget {
 
 /// Placeholder rows shown during the very first load (features.md F5.AC1).
 class _SkeletonBody extends StatelessWidget {
-  const _SkeletonBody();
+  const _SkeletonBody({required this.rowCount});
+
+  final int rowCount;
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +326,7 @@ class _SkeletonBody extends StatelessWidget {
               AppSpacing.lg,
               AppSpacing.xxl,
             ),
-            itemCount: kTargetCurrencies.length,
+            itemCount: rowCount.clamp(1, 12),
             separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
             itemBuilder: (BuildContext context, _) {
               return Container(

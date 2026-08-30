@@ -8,11 +8,12 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockClient extends Mock implements http.Client {}
 
-/// A representative success payload. `XXX` is here to prove we drop currencies
-/// we do not display.
+/// A representative success payload. `XXX` is here to prove we drop codes that
+/// are not in the supported catalogue.
 const String _okBody = '{"result":"success","base_code":"USD",'
     '"time_last_update_unix":1700000000,'
-    '"rates":{"EUR":0.92,"GBP":0.79,"JPY":149.3,"AUD":1.52,"CAD":1.36,"XXX":1.0}}';
+    '"rates":{"EUR":0.92,"GBP":0.79,"JPY":149.3,"AUD":1.52,"CAD":1.36,'
+    '"CHF":0.88,"XXX":1.0}}';
 
 void main() {
   late _MockClient client;
@@ -25,7 +26,7 @@ void main() {
     dataSource = HttpRatesRemoteDataSource(client);
   });
 
-  test('200 + valid body -> keeps only the five target currencies', () async {
+  test('200 + valid body -> keeps supported codes, drops the rest', () async {
     when(() => client.get(any()))
         .thenAnswer((_) async => http.Response(_okBody, 200));
 
@@ -33,7 +34,7 @@ void main() {
 
     expect(
       dto.rates.keys,
-      containsAll(<String>['EUR', 'GBP', 'JPY', 'AUD', 'CAD']),
+      containsAll(<String>['EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF']),
     );
     expect(dto.rates.containsKey('XXX'), isFalse);
     expect(dto.rates['EUR'], 0.92);

@@ -13,6 +13,12 @@ any code. Keyword meaning is defined in [`README.md`](README.md).
   agent **MUST** follow it and **MUST NOT** re-litigate it in code or comments.
 - R1.4 "Simple + explained" beats "complex + silent". If an abstraction is not
   used by this app today, do not add it.
+- R1.5 The extension features in [`features.md`](features.md) (F10–F14: currency
+  picker, search, reorder, theme toggle, clear button) are **in scope** but held
+  to the same bar as everything else — their logic lives in a repository or a
+  controller, never in a widget (R2.2), each persisted concern gets its own
+  storage key (see [`caching.md`](caching.md)), and none of them may regress a
+  P0 feature, the caching test, or the README.
 
 ## R2 — Architecture
 

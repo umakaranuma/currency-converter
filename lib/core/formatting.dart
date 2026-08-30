@@ -6,9 +6,9 @@ library;
 import 'constants.dart';
 
 /// Formats a money [amount] with the correct number of fraction digits for
-/// [code] (JPY → 0, everything else → 2, per [kCurrencyDecimals]).
+/// [code] — 0 for the currencies in [kZeroDecimalCurrencies], 2 for the rest.
 String formatMoney(double amount, String code) =>
-    amount.toStringAsFixed(kCurrencyDecimals[code] ?? 2);
+    amount.toStringAsFixed(kZeroDecimalCurrencies.contains(code) ? 0 : 2);
 
 /// Formats a per-unit FX rate. Sub-100 rates get 4 digits so EUR/GBP keep useful
 /// precision (`0.9231`), large rates like JPY get 2 (`149.30`).

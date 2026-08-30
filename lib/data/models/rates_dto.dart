@@ -20,9 +20,10 @@ class RatesDto {
 
   /// Parses the exchangerate-api.com (`open.er-api.com`) response body.
   ///
-  /// Throws [ApiException] if the service signalled an error, the shape is
-  /// unexpected, or any of [kTargetCurrencies] is missing. Only the currencies
-  /// we actually display are kept; the rest of the payload is dropped.
+  /// Keeps every [kSupportedCurrencies] code the feed provides and drops the
+  /// rest of the payload. Throws [ApiException] if the service signalled an
+  /// error, the shape is unexpected, or a *default-selection* currency is
+  /// missing (that would mean a broken feed, not just an exotic gap).
   factory RatesDto.fromApiJson(Map<String, dynamic> json) {
     if (json['result'] != 'success') {
       throw const ApiException('Rates service reported an error');
@@ -33,12 +34,13 @@ class RatesDto {
     }
 
     final Map<String, double> parsed = <String, double>{};
-    for (final String code in kTargetCurrencies) {
+    for (final String code in kSupportedCurrencies) {
       final Object? value = rawRates[code];
-      if (value is! num) {
+      if (value is num) {
+        parsed[code] = value.toDouble();
+      } else if (kDefaultSelection.contains(code)) {
         throw ApiException('Missing rate for $code in response');
       }
-      parsed[code] = value.toDouble();
     }
 
     return RatesDto(

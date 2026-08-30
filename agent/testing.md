@@ -66,10 +66,23 @@ Act/Assert: expect(() => repo.getRates(), throwsA(isA<NetworkException>()))
 **File:** `test/data/rates_remote_datasource_test.dart` — inject a mocked
 `http.Client`.
 
-- 200 + valid body → parsed `ExchangeRates` with only the 5 target codes.
+- 200 + valid body → keeps the supported-catalogue codes, drops the rest.
 - 500 → `ApiException` with `statusCode == 500`.
 - 200 + `{"result":"error"}` → `ApiException`.
+- malformed (non-JSON) body → `ApiException`.
 - client throws `SocketException` → `NetworkException`.
+
+## Extension tests (F10–F14)
+
+**File:** `test/domain/currency_preferences_test.dart` — pure, no mocks.
+`withAdded` (dupe/unknown ignored), `withRemoved` (last-item guard),
+`reordered` (post-removal index semantics), `sanitized` (drops unknown /
+duplicate / base; falls back to defaults).
+
+**File:** `test/data/currency_preferences_repository_impl_test.dart` — real
+`SharedPreferences` with `setMockInitialValues`. Empty store → defaults;
+`save` then `load` round-trips a custom order; stored list with stale/unknown
+codes is sanitized; a corrupt blob → defaults and the key is cleared.
 
 ## Explicitly NOT tested (and why — put this in the README)
 

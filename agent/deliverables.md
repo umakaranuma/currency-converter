@@ -36,11 +36,16 @@ It **MUST** answer all of the following. Pull the reasoning straight from
    - Not tested: widget/golden, SharedPreferences adapter, live API, `main.dart`
      wiring — with the one-line reason each (see [`testing.md`](testing.md)).
 5. **If we needed 50 currencies + real-time updates, what would change?**
-   - Currency list is already one constant (R2.5), so 50 is a data change plus
-     UI virtualization (`ListView.builder`, search/filter).
+   - Currencies: **already built.** The catalogue is one constant, the fetch
+     keeps all of it, and the selection is user-editable + persisted behind
+     `CurrencyPreferencesRepository` (F10–F12, decisions.md D8–D9). Going to 50
+     is adding entries to `kSupportedCurrencies` / `kCurrencyInfo` — no other
+     change; the picker already virtualizes with `ListView.builder` + search.
    - Real-time: drop TTL to seconds or move to a streaming endpoint / websocket,
      push updates through the controller, show per-rate freshness, reconsider
      `ChangeNotifier` vs a `Stream`-based approach.
+   - Editable **base** currency was deliberately left out (README "next steps"):
+     it needs per-base cache keys for little user value at this scope (D8).
 6. **Why did you choose X over Y?** (at least one concrete trade-off)
    - e.g. `ChangeNotifier` over Provider (D3); typed exceptions over
      `Either`/`Result` (D4); key-less API over a keyed one (D6); 1 h TTL over
@@ -72,3 +77,16 @@ Also include:
 - [ ] API 500 path handled distinctly from the offline path
 - [ ] README answers all six questions above
 - [ ] Default Flutter counter app and default widget test are gone
+
+### Extension features (F10–F14)
+
+- [ ] Currency picker: add/remove persists across restart; last currency can't
+      be removed; "Reset" restores the default five
+- [ ] Search filters by code or name; the clear (×) button resets it
+- [ ] Drag-to-reorder persists across restart
+- [ ] Adding / removing / reordering a currency makes **no network call**
+- [ ] Theme toggle cycles system → light → dark and persists across restart
+- [ ] Clear (×) button on the amount field appears only when it has text
+- [ ] The extension features each have logic in a repo/controller, not a widget
+- [ ] `currency_preferences_test.dart` + `currency_preferences_repository_impl_test.dart`
+      pass

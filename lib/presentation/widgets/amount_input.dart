@@ -5,17 +5,23 @@ import '../../core/constants.dart';
 import '../../core/theme/app_spacing.dart';
 
 /// The hero input card: a large, friendly USD amount field with the base
-/// currency shown as a fixed pill (features.md F1). Input is restricted to
-/// digits and a single decimal point; all parsing happens in the controller.
+/// currency shown as a fixed pill (features.md F1) and a clear (×) button that
+/// appears once there is text. Input is restricted to digits and a single
+/// decimal point; all parsing happens in the controller.
 class AmountInput extends StatelessWidget {
   const AmountInput({
     super.key,
     required this.controller,
     required this.onChanged,
+    required this.onClear,
   });
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
+
+  /// Called when the user taps the clear button. The parent owns the
+  /// [TextEditingController] so it does the actual `.clear()`.
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +99,20 @@ class AmountInput extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
+              // Clear button — only while there is something to clear.
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (BuildContext context, TextEditingValue value, _) {
+                  if (value.text.isEmpty) return const SizedBox(width: 0);
+                  return IconButton(
+                    onPressed: onClear,
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Clear amount',
+                    icon: Icon(Icons.cancel_rounded,
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.55)),
+                  );
+                },
               ),
             ],
           ),

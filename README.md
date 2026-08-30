@@ -1,12 +1,13 @@
 # USD Currency Converter
 
-A small Flutter app: type a USD amount, see it converted to EUR, GBP, JPY, AUD
-and CAD using real exchange rates, with local caching and explicit handling of
-network / API failures.
+A small Flutter app: type a USD amount, see it converted to a set of currencies
+using real exchange rates, with local caching and explicit handling of network /
+API failures. You can pick, search, reorder and reset which currencies show, and
+switch light/dark theme — all persisted.
 
 The functional spec this was built from lives in [`agent/`](agent/) — one
 markdown file per concern (rules, features, architecture, caching, error
-handling, testing, decisions).
+handling, testing, decisions), plus a rendered [`design-system.html`](agent/design-system.html).
 
 ## Run it
 
@@ -16,12 +17,24 @@ flutter run
 ```
 
 ```bash
-flutter test       # 15 tests
+flutter test       # 24 tests
 flutter analyze    # clean
 ```
 
 No API key or configuration is needed — the app uses exchangerate-api.com's
 key-less `open.er-api.com` endpoint.
+
+## Features
+
+- USD amount → live conversion to a chosen set of currencies (default: EUR, GBP,
+  JPY, AUD, CAD), recomputed locally as you type.
+- **Manage currencies** screen: add/remove from a ~30-currency catalogue, search
+  by code or name, "Reset" to the default five. Changes persist and cost **no
+  network call** — every catalogue rate is already fetched and cached.
+- **Drag to reorder** the list; order persists.
+- **Clear (×)** button on the amount field.
+- **Theme toggle** in the header: system → light → dark, persisted.
+- 1-hour rate cache, stale-with-banner offline behaviour, typed errors.
 
 ---
 
@@ -33,24 +46,33 @@ Three layers, dependencies point inward (`presentation → domain → data`):
 lib/
 ├── main.dart                     composition root: builds the object graph
 ├── core/
-│   ├── constants.dart            currency set + display metadata, TTL, timeout, URL, cache key
+│   ├── constants.dart            currency catalogue + default set, TTL, timeout, URL, storage keys
 │   ├── errors.dart               sealed AppException hierarchy
 │   ├── formatting.dart           money / rate / "x ago" string helpers
 │   └── theme/                    design system: spacing, colour tokens, light+dark ThemeData
 ├── data/                         everything I/O
 │   ├── datasources/
 │   │   ├── rates_remote_datasource.dart   HTTP + JSON, maps failures to exceptions
-│   │   └── rates_local_datasource.dart    SharedPreferences read/write
+│   │   ├── rates_local_datasource.dart    SharedPreferences read/write (rate cache)
+│   │   └── settings_store.dart            SharedPreferences read/write (theme mode)
 │   ├── models/rates_dto.dart     API JSON  ⇄  cache JSON  ⇄  domain entity
-│   └── repositories/rates_repository_impl.dart   the cache-vs-network policy
+│   └── repositories/
+│       ├── rates_repository_impl.dart                the cache-vs-network policy
+│       └── currency_preferences_repository_impl.dart persisted currency selection
 ├── domain/                       pure Dart, no Flutter / no http
-│   ├── entities/exchange_rates.dart        snapshot + fetchedAt + isStale(ttl)
-│   ├── repositories/rates_repository.dart  the interface presentation depends on
-│   └── services/conversion_service.dart    amount × rate
+│   ├── entities/
+│   │   ├── exchange_rates.dart              snapshot + fetchedAt + isStale(ttl)
+│   │   └── currency_preferences.dart        ordered selection + add/remove/reorder/sanitize
+│   ├── repositories/             the interfaces presentation depends on
+│   └── services/conversion_service.dart     amount × rate
 └── presentation/
-    ├── controllers/converter_controller.dart   ChangeNotifier + immutable view state
-    ├── pages/converter_page.dart               loading / error / ready switch
-    └── widgets/                                amount input, row, status banner
+    ├── controllers/
+    │   ├── converter_controller.dart   ChangeNotifier: amount, selection, view state
+    │   └── theme_controller.dart       ChangeNotifier: ThemeMode + persistence
+    ├── pages/
+    │   ├── converter_page.dart         loading / error / ready switch, reorderable list
+    │   └── currency_picker_page.dart   add/remove/search currencies
+    └── widgets/                        amount input (+clear), row, skeleton, status banner
 ```
 
 **Why these layers.** The two things being graded — "is the logic testable?"
@@ -66,14 +88,19 @@ as a `sealed` exception hierarchy instead of a result type — you still get
 exhaustive handling (the `switch` in `converter_page.dart` won't compile if a
 case is missed) without wrapping every call site.
 
-**State management.** One `ChangeNotifier` (`ConverterController`) injected via
-constructor in `main.dart`, observed by a single `ListenableBuilder`. The brief
-allows the Provider package; one screen with one stream of state doesn't need
-it. All parsing, fetch-timing and error-to-UI mapping lives in the controller,
-never in widgets.
+**State management.** Two `ChangeNotifier`s — `ConverterController` (amount,
+currency selection, view state) and `ThemeController` (theme mode) — injected via
+constructor in `main.dart`, each observed by a `ListenableBuilder`. The brief
+allows the Provider package; this doesn't need it. All parsing, fetch-timing,
+currency mutation and error-to-UI mapping lives in the controllers, never in
+widgets.
 
-**Adding currencies** is a one-line edit to `kTargetCurrencies` in
-`core/constants.dart`; nothing else hard-codes the list.
+**Adding currencies** is one entry in `kSupportedCurrencies` + one in
+`kCurrencyInfo` in `core/constants.dart`; nothing else hard-codes the list. The
+*shown* subset is user-editable and persisted behind `CurrencyPreferencesRepository`
+(a second repository following the same shape as `RatesRepository`), stored under
+its own SharedPreferences key. The rate fetch keeps the whole catalogue, so
+changing the selection never hits the network.
 
 ## 2. How does caching work?
 
@@ -100,6 +127,10 @@ never in widgets.
 - **Invalidation:** by time (older than the TTL → refresh is attempted first);
   by schema (`_v1` suffix — bump it and old blobs are never read); a blob that
   fails to parse is deleted and treated as a miss.
+- **Separate slots.** The currency selection (`currency_selection_v1`) and theme
+  mode (`theme_mode_v1`) live under their own keys with their own `_v1`
+  versions. Changing one never touches another; the rate cache is only ever
+  read/written by `RatesRepositoryImpl`.
 
 ## 3. What if there's no internet?
 
@@ -124,7 +155,7 @@ throw; the controller maps the outcome to a view state; the page renders it.
 
 ## 4. What did you test, and what did you not?
 
-**Tested** (`flutter test`, 15 cases):
+**Tested** (`flutter test`, 24 cases):
 
 - **`RatesRepositoryImpl`** (`test/data/rates_repository_impl_test.dart`) — the
   headline test. Both datasources are faked with `mocktail`:
@@ -138,37 +169,59 @@ throw; the controller maps the outcome to a view state; the page renders it.
     back.
 - **`ConversionService`** — the arithmetic, zero/negative amount, empty rates.
 - **`HttpRatesRemoteDataSource`** — with a mocked `http.Client`: happy body
-  keeps only the 5 target codes; 500 → `ApiException(statusCode: 500)`;
-  `result != "success"` → `ApiException`; non-JSON body → `ApiException`;
-  `SocketException` → `NetworkException`.
+  keeps supported-catalogue codes and drops the rest; 500 →
+  `ApiException(statusCode: 500)`; `result != "success"` → `ApiException`;
+  non-JSON body → `ApiException`; `SocketException` → `NetworkException`.
+- **`CurrencyPreferences`** — `withAdded` / `withRemoved` (last-item guard) /
+  `reordered` / `sanitized` (drops unknown, duplicate, base; falls back to
+  defaults).
+- **`CurrencyPreferencesRepositoryImpl`** — real `SharedPreferences` mock:
+  empty → defaults; `save`→`load` round-trips a custom order; stale/unknown
+  codes are sanitized on load; a corrupt blob → defaults and the key is cleared.
 
 **Not tested, on purpose:**
 
 - **Widget / golden tests** — the UI is deliberately minimal and was still
   moving at the end; pinning it tests nothing durable.
-- **The SharedPreferences adapter** — it's a thin wrapper over a trusted
-  package; the repository tests fake it.
+- **The SharedPreferences adapter** for the *rate* cache — a thin wrapper over a
+  trusted package; the repository tests fake it. (The *currency* store is tested
+  end-to-end because its sanitize-on-load logic is real behaviour, not a passthrough.)
 - **The live API** — no network in tests; the datasource tests cover our
   parsing and error mapping against representative payloads.
-- **`main.dart` wiring** — three constructor calls; a smoke test would assert
-  almost nothing.
+- **`main.dart` wiring** — constructor calls; a smoke test would assert almost
+  nothing.
+- **`ThemeController` / `SettingsStore`** — trivial string↔enum mapping over
+  SharedPreferences.
 
 ## 5. If we needed 50 currencies + real-time updates
 
-- **50 currencies:** the list is already a single constant, so that part is a
-  data change. UI becomes a `ListView.builder` (already is) plus search/filter
-  and probably grouping. The API returns all rates in one call, so no extra
-  requests. Cache size is still trivial.
+- **50 currencies — mostly already done.** The catalogue is one constant, the
+  fetch keeps all of it, and which currencies show is a user-editable, ordered,
+  persisted list behind `CurrencyPreferencesRepository`. Going to 50 is adding
+  entries to `kSupportedCurrencies` + `kCurrencyInfo`; the picker already
+  virtualizes with `ListView.builder` + search. Adding one to your list costs
+  no network call.
 - **Real-time:** drop the TTL to seconds or move to a streaming source
   (websocket / SSE); push updates through the controller instead of fetching on
   demand; show per-rate freshness rather than one global timestamp; reconsider
   `ChangeNotifier` vs an explicit `Stream` on the repository. The layer split
   means this is a `data` + `controller` change, not a rewrite.
+- **Editable base currency** was left out on purpose: it needs per-base cache
+  keys (`..._v1_<base>`) and a bigger caching story for little user value at
+  this scope. Clean next step, not a rewrite.
 
 ## 6. Why X over Y
 
-- **`ChangeNotifier` over the Provider package** — one screen, one state object;
-  a package would be ceremony. The controller is still a clean, testable seam.
+- **`ChangeNotifier` over the Provider package** — two small controllers, each
+  one state object; a package would be ceremony. They stay clean, testable seams.
+- **A second repository for the currency selection** (over a bare list in the
+  controller) — keeps add/remove/reorder/sanitize unit-testable with no widgets
+  and mirrors `RatesRepository`, so there's one pattern to learn.
+- **Fetch + cache the whole catalogue** (over fetching only the selected set) —
+  the payload already carries ~160 currencies, so keeping 30 costs nothing and
+  makes "add a currency" instant and offline-safe.
+- **Separate storage keys per concern** — a change to the selection or theme can
+  never corrupt or invalidate the rate cache.
 - **`sealed` exceptions over `Either`/`Result`** — exhaustive handling from the
   compiler without wrapping every call and unwrapping at every use site.
 - **Key-less `open.er-api.com` over a keyed provider** — nothing secret to
@@ -197,20 +250,25 @@ throw; the controller maps the outcome to a view state; the page renders it.
   (cards, inputs, buttons, banner), and one tuned type scale with tabular
   figures for the numbers.
 
-`main.dart` sets `themeMode: ThemeMode.system`, so it follows the OS. No fonts,
-image assets, or extra packages were added — it's pure Material 3, and every
-colour/size comes from `Theme.of(context)`.
+Default `themeMode` follows the OS; the header toggle overrides it and the
+choice persists. No fonts, image assets, or extra packages were added — it's
+pure Material 3, and every colour/size comes from `Theme.of(context)`. A
+rendered reference of every screen and token is in
+[`agent/design-system.html`](agent/design-system.html).
 
-The UI itself: a gradient header, a floating amount card, flag-badged result
-cards (tap to copy), a freshness pill / offline banner, skeleton rows on first
-load, and a typed-per-error full-screen error state.
+The UI itself: a gradient header (theme toggle + refresh), a floating amount
+card with a clear button, flag-badged result cards (tap to copy, drag to
+reorder), a "Manage currencies" screen with search, a freshness pill / offline
+banner, skeleton rows on first load, and a typed-per-error full-screen error
+state.
 
 ## Known cuts / what's next
 
-- Error copy is in-code English strings — no localisation.
+- Error and UI copy are in-code English strings — no localisation.
 - The offline banner's "dismissed" flag is per-widget and resets on reason
   change; fine for one screen, wouldn't scale.
 - No widget tests (see §4). First addition with more time would be a golden of
-  each of the three view states.
-- `ConverterController` is app-lifetime and never disposed — acceptable for a
-  single root singleton, would matter if it became route-scoped.
+  each view state and a `ConverterController` test for the selection mutations.
+- The controllers are app-lifetime and never disposed — fine for root
+  singletons, would matter if they became route-scoped.
+- Editable base currency (see §5).

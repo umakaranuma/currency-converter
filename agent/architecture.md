@@ -27,35 +27,44 @@ lib/
 ├── main.dart                     ← builds the object graph, runs the app
 │
 ├── core/
-│   ├── constants.dart            ← base currency, target list, TTL, base URL, timeout
+│   ├── constants.dart            ← base currency, currency catalogue + default set,
+│   │                               TTL, base URL, timeout, all storage keys
 │   ├── errors.dart               ← exception hierarchy (see error-handling.md)
-│   └── formatting.dart           ← money / rate / relative-time string helpers (pure Dart)
+│   ├── formatting.dart           ← money / rate / relative-time string helpers (pure Dart)
+│   └── theme/                    ← design system — app_spacing, app_colors, app_theme
 │
 ├── data/
 │   ├── datasources/
 │   │   ├── rates_remote_datasource.dart   ← abstract + http implementation
-│   │   └── rates_local_datasource.dart    ← abstract + shared_preferences implementation
+│   │   ├── rates_local_datasource.dart    ← abstract + shared_preferences implementation
+│   │   └── settings_store.dart            ← plain-string SharedPreferences for theme mode
 │   ├── models/
 │   │   └── rates_dto.dart         ← parses API JSON, toEntity(), toJson()/fromJson() for cache
 │   └── repositories/
-│       └── rates_repository_impl.dart     ← implements domain RatesRepository
+│       ├── rates_repository_impl.dart              ← implements domain RatesRepository
+│       └── currency_preferences_repository_impl.dart ← implements CurrencyPreferencesRepository
 │
 ├── domain/
 │   ├── entities/
-│   │   └── exchange_rates.dart    ← { base, Map<String,double> rates, DateTime fetchedAt } + isStale(ttl)
+│   │   ├── exchange_rates.dart    ← { base, Map<String,double> rates, DateTime fetchedAt } + isStale(ttl)
+│   │   └── currency_preferences.dart ← ordered selected codes + add/remove/reorder/sanitize
 │   ├── repositories/
-│   │   └── rates_repository.dart  ← abstract: Future<ExchangeRates> getRates({bool forceRefresh})
+│   │   ├── rates_repository.dart            ← abstract: getRates({bool forceRefresh})
+│   │   └── currency_preferences_repository.dart ← abstract: load() / save(prefs)
 │   └── services/
 │       └── conversion_service.dart ← pure: convert(amount, rates) → Map<String,double>
 │
 └── presentation/
     ├── controllers/
-    │   └── converter_controller.dart  ← ChangeNotifier: amount, ConverterViewState
+    │   ├── converter_controller.dart  ← ChangeNotifier: amount, selection, ConverterState
+    │   └── theme_controller.dart      ← ChangeNotifier: ThemeMode + persistence
     ├── pages/
-    │   └── converter_page.dart        ← Scaffold, wires controller to widgets
+    │   ├── converter_page.dart        ← Scaffold, wires controllers to widgets
+    │   └── currency_picker_page.dart  ← add/remove/search currencies (F10/F11)
     └── widgets/
-        ├── amount_input.dart
+        ├── amount_input.dart          ← + clear (×) button (F14)
         ├── conversion_row.dart
+        ├── shimmer_box.dart           ← first-load skeleton (F5)
         └── status_banner.dart         ← offline / stale / last-updated
 ```
 

@@ -4,12 +4,29 @@ Presentation-layer only. None of this touches `domain` / `data` or the rules in
 [`rules.md`](rules.md); it is *how* the `ready` / `loading` / `error` states from
 [`features.md`](features.md) are painted.
 
+## Visual reference — build the UI to match this
+
+**[`design-system.html`](design-system.html)** is the authoritative visual spec.
+Open it in a browser. It renders, in light **and** dark:
+
+- the primary screen (gradient header, floating amount card, flag result cards);
+- every state — first-load skeleton, offline/stale banner, service-outage error;
+- the full colour token tables, the type scale, the spacing/radius scale;
+- each component with its spec;
+- a table mapping every element back to a file in `lib/core/theme/` and
+  `lib/presentation/widgets/`.
+
+The Flutter widgets and `lib/core/theme/` must reproduce what that file shows.
+Where this markdown and the HTML disagree, the HTML wins for anything visual;
+this file wins for structure and constraints.
+
 ## Goals
 
 - Friendly and trustworthy (it shows money) — calm blues, a green "success"
   accent, generous spacing, large readable numbers.
 - One set of tokens, no magic numbers in widgets.
-- Light **and** dark, switched by the OS (`ThemeMode.system`).
+- Light **and** dark — default follows the OS; a header toggle overrides it and
+  the choice persists (F13).
 - No font/asset/package additions — a tuned type scale on the platform font.
 
 ## Files (`lib/core/theme/`)
@@ -48,14 +65,22 @@ tracking and `FontFeature.tabularFigures()` so digits don't jump.
 ## Components
 
 - **Gradient header** — `primary → tertiary` diagonal wash, ~210 px, behind the
-  content layer (a `Stack`); carries the title, subtitle, and refresh button in
+  content layer (a `Stack`); carries the title, subtitle, a **theme-toggle**
+  button (F13 — icon shows system/light/dark) and the refresh button, all in
   `onGradient` colour.
 - **Amount card** (`AmountInput`) — elevated rounded-28 card straddling the
   gradient/surface seam; caption + USD flag pill, oversized borderless field
-  with a `$` prefix and `0.00` hint.
+  with a `$` prefix and `0.00` hint, and a **clear (×)** button that appears
+  only when the field has text (F14).
 - **Result card** (`ConversionRow`) — rounded-20 outlined card: flag tile,
   code + full name, amount (tabular) + `1 USD = …` line. Tap copies the amount
-  (snackbar); no logic in the widget.
+  (snackbar); no logic in the widget. In the list each row carries a trailing
+  **drag handle** (`drag_indicator`, 50% `onSurfaceVariant`) for reorder (F12).
+- **Manage-currencies button** — an `OutlinedButton.icon` ("tune" icon) as the
+  list footer; opens the currency picker screen (F10/F11).
+- **Currency picker** (`CurrencyPickerPage`) — search field (with its own clear
+  button) over a `SwitchListTile` per catalogue currency; USD pinned at the top
+  with a "Base" chip; a "Reset" app-bar action.
 - **Status banner** (`StatusBanner`) — fresh: a small `success`-tinted pill
   ("Rates updated 4 min ago", spinner while refreshing). Offline/stale: a
   `warning`-tinted rounded card with Retry + dismiss (F6.AC1/AC3).
