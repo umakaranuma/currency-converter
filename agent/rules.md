@@ -33,8 +33,10 @@ any code. Keyword meaning is defined in [`README.md`](README.md).
 
 ## R3 — State management
 
-- R3.1 The agent **MUST NOT** add `provider`, `riverpod`, `bloc`, `get`,
-  `mobx`, or any third-party state package.
+- R3.1 The brief caps this at `Provider` / `ValueNotifier` / built-in. The agent
+  **MUST NOT** add `riverpod`, `bloc`, `get`, `mobx`, or any heavier state
+  package. The `provider` package is permitted by the brief but **SHOULD NOT**
+  be added — one screen does not need it (see [`decisions.md`](decisions.md) D3).
 - R3.2 State **MUST** be exposed with a built-in `ChangeNotifier` (or
   `ValueNotifier`) and consumed with `ListenableBuilder` /
   `ValueListenableBuilder` / `AnimatedBuilder`.

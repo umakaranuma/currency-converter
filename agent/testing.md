@@ -41,7 +41,7 @@ Arrange: local.read() → stale ExchangeRates
          remote.fetch() → throws NetworkException
 Act:     repo.getRates()
 Assert:  returns the stale rates
-         result.staleServed == true   (and lastError is NetworkException)
+         result.lastError is NetworkException   (⇒ served as fallback)
          does NOT throw
 ```
 

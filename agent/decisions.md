@@ -1,8 +1,9 @@
 # Decisions
 
-The assignment leaves five trade-offs open. They are resolved here. The agent
-**MUST** follow these and **MUST NOT** re-open them (R1.3). The reasoning is
-copied into the project README (that is a graded deliverable).
+The assignment's "Key Trade-off Questions" section leaves five decisions open
+(D1–D5). Two further implementation decisions (D6–D7) are recorded below the
+line. The agent **MUST** follow all of these and **MUST NOT** re-open them
+(R1.3). The reasoning is copied into the project README (a graded deliverable).
 
 ---
 

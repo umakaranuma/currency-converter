@@ -2,9 +2,9 @@
 
 This folder is the **single source of truth** for building this app. The
 implementing agent must read every file here and build **only** what these
-files describe. Nothing outside this folder (including the original assignment
-PDF/markdown) should be treated as a requirement — it has already been distilled
-into these files.
+files describe. Nothing outside this folder (including the original
+`Flutter-Engineer-Assignment.md`) should be treated as a requirement — it has
+already been distilled into these files.
 
 ## Source
 
@@ -19,17 +19,18 @@ open, this pack **makes the decision** and records the rationale in
 |---|------|---------|
 | 1 | [`context.md`](context.md) | What is being built, for whom, hard limits, assumptions |
 | 2 | [`rules.md`](rules.md) | Non-negotiable constraints. Do / Don't. Read before writing any code |
-| 3 | [`features.md`](features.md) | Functional requirements — the behaviour to implement |
-| 4 | [`architecture.md`](architecture.md) | Layers, folder structure, dependency direction |
-| 5 | [`tech-stack.md`](tech-stack.md) | API endpoint, packages, state management choice |
-| 6 | [`caching.md`](caching.md) | When cache is read, written, invalidated; offline behaviour |
-| 7 | [`error-handling.md`](error-handling.md) | Exception hierarchy, network vs API vs cache errors |
-| 8 | [`testing.md`](testing.md) | What to test, what not to test, and why |
-| 9 | [`deliverables.md`](deliverables.md) | README content, submission checklist, definition of done |
+| 3 | [`decisions.md`](decisions.md) | The open trade-offs from the brief, already resolved — binding |
+| 4 | [`features.md`](features.md) | Functional requirements — the behaviour to implement |
+| 5 | [`architecture.md`](architecture.md) | Layers, folder structure, dependency direction |
+| 6 | [`tech-stack.md`](tech-stack.md) | API endpoint, packages, state management choice |
+| 7 | [`caching.md`](caching.md) | When cache is read, written, invalidated; offline behaviour |
+| 8 | [`error-handling.md`](error-handling.md) | Exception hierarchy, network vs API vs cache errors |
+| 9 | [`testing.md`](testing.md) | What to test, what not to test, and why |
+| 10 | [`deliverables.md`](deliverables.md) | README content, submission checklist, definition of done |
 
 ## How the agent should work
 
-1. Read all nine files before touching code.
+1. Read every file above, in order, before touching code.
 2. Follow [`architecture.md`](architecture.md) for folder layout exactly.
 3. Implement [`features.md`](features.md) top to bottom.
 4. Satisfy every MUST in [`rules.md`](rules.md). Treat SHOULD as strong default.

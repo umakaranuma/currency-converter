@@ -84,7 +84,7 @@ RatesRepositoryImpl(remote, local)         // implements RatesRepository
       │
 ConverterController(repository, ConversionService())
       │
-runApp( ConverterApp(controller) )
+runApp( ConverterApp(controller) )   // MaterialApp root; defined in main.dart, home: ConverterPage
 ```
 
 ## Why this structure

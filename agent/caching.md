@@ -32,10 +32,16 @@ bool isStale(Duration ttl) => DateTime.now().difference(fetchedAt) >= ttl;
        return remote
    catch NetworkException or ApiException as e:
        if cached != null:
-           return cached.copyWith(staleServed: true, lastError: e)  // STALE FALLBACK
+           return cached with lastError = e        // STALE FALLBACK (lastError != null ⇒ served as fallback)
        else:
-           rethrow                                                   // HARD FAIL
+           rethrow                                 // HARD FAIL
 ```
+
+> Result fields the repository exposes on the returned value: the
+> `ExchangeRates` entity (`base`, `rates`, `fetchedAt`, `isStale(ttl)`), plus a
+> nullable `lastError`. The controller derives `isOffline` from
+> `lastError is NetworkException`. These names match
+> [`error-handling.md`](error-handling.md); do not invent parallel flags.
 
 Key points:
 

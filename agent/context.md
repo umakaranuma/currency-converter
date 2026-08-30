@@ -27,8 +27,11 @@ Reviewers evaluating an engineer take-home. They care, in order, about:
 
 - Scope is a **2-hour** take-home. Simple and explained beats complex and
   silent. Do **not** over-engineer.
-- No external state-management packages. `ChangeNotifier` / `ValueNotifier` /
-  plain widgets only. See [`tech-stack.md`](tech-stack.md).
+- State management is capped at `Provider` / `ValueNotifier` / built-in by the
+  brief. This pack goes with **built-in `ChangeNotifier`** and adds no state
+  package (`riverpod`, `bloc`, `get`, `mobx` are out; `provider` is allowed by
+  the brief but unnecessary at this size). See [`decisions.md`](decisions.md) D3
+  and [`tech-stack.md`](tech-stack.md).
 - Minimal UI is fine. No pixel-perfect design, no theming system, no animations.
 - Not every edge case needs handling — but the ones named in
   [`error-handling.md`](error-handling.md) do.
@@ -40,7 +43,8 @@ Reviewers evaluating an engineer take-home. They care, in order, about:
 - Single user, single device. No auth, no accounts, no multi-user concerns.
 - Base currency is always **USD**. Targets are the fixed list of 5 above.
 - Persistence beyond a session is limited to the rate cache (SharedPreferences).
-- Platform: Android is the primary run target; code stays platform-agnostic.
+- Platform: any Flutter target (the brief names none); code stays
+  platform-agnostic. Verify on whatever device/emulator is available.
 
 ## Out of scope
 
